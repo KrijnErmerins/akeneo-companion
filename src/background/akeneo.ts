@@ -1,11 +1,10 @@
-import type { AkeneoCredentials, ProductLookupResult, ProductCompleteness } from '../types/akeneo'
+import type { AkeneoCredentials, ProductLookupResult } from '../types/akeneo'
 import { getToken } from './auth'
 
 async function apiFetch(baseUrl: string, path: string, token: string) {
-  const response = await fetch(`${baseUrl}${path}`, {
+  return fetch(`${baseUrl}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
-  return response
 }
 
 export async function lookupProduct(
@@ -23,12 +22,11 @@ export async function lookupProduct(
 
   if (productRes.ok) {
     const product = await productRes.json()
-    const completenesses: ProductCompleteness[] = product.completenesses ?? []
     return {
       type: 'product',
       identifier: product.identifier,
       family: product.family ?? null,
-      completenesses,
+      values: product.values ?? {},
     }
   }
 
@@ -49,7 +47,7 @@ export async function lookupProduct(
       type: 'product-model',
       identifier: model.code,
       family: model.family_variant ?? null,
-      completenesses: [],
+      values: model.values ?? {},
     }
   }
 

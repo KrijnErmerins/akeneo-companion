@@ -1,5 +1,6 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default defineManifest({
   manifest_version: 3,
   name: 'Akeneo Companion',
@@ -14,11 +15,7 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
     default_icon: 'icons/icon48.png',
   },
-  options_ui: {
-    page: 'src/options/index.html',
-    open_in_tab: true,
-  },
-  background: {
+background: {
     service_worker: 'src/background/index.ts',
     type: 'module',
   },
@@ -38,6 +35,7 @@ export default defineManifest({
         'https://ledprofielkoning.nl/*',
         'https://ledprofielkoning.be/*',
         'https://ledchampion.de/*',
+        'https://de.ledchampion.magento2.led.p.maxserv.io/*',
       ],
       js: ['src/content/sku-detector.ts'],
     },
@@ -56,7 +54,8 @@ export default defineManifest({
     'https://ledprofielkoning.nl/*',
     'https://ledprofielkoning.be/*',
     'https://ledchampion.de/*',
+    'https://de.ledchampion.magento2.led.p.maxserv.io/*',
     'https://*.akeneo.com/*',
   ],
   permissions: ['storage', 'activeTab'],
-})
+} as any)

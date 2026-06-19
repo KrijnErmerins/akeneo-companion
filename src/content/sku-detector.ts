@@ -1,5 +1,8 @@
-// Extracts SKU from LedKoning PDP and notifies the background service worker.
-// Strategy order: JSON-LD structured data → URL slug → meta tags
+// Extracts SKU from PDP pages. Strategy order:
+// 1. JSON-LD structured data
+// 2. itemprop="sku" (Magento 2 Luma theme)
+// 3. Meta tag product:retailer_item_id
+// 4. .product.attribute.sku .value (Magento 2 fallback)
 
 function extractSku(): string | null {
   // 1. JSON-LD
@@ -16,27 +19,42 @@ function extractSku(): string | null {
     }
   }
 
-  // 2. Meta tag (Magento often exposes product SKU here)
+  // 2. itemprop="sku" — Magento 2 Luma theme standard
+  const itemprop = document.querySelector('[itemprop="sku"]')
+  if (itemprop?.textContent?.trim()) return itemprop.textContent.trim()
+
+  // 3. Meta tag
   const meta = document.querySelector<HTMLMetaElement>('meta[property="product:retailer_item_id"]')
   if (meta?.content) return meta.content
 
-  // 3. URL — Magento PDP URLs often end in -<sku>.html or contain the SKU as a path segment
-  // TODO: Add LedKoning-specific URL pattern once confirmed
+  // 4. Magento 2 .product.attribute.sku .value fallback
+  const skuEl = document.querySelector('.product.attribute.sku .value')
+  if (skuEl?.textContent?.trim()) return skuEl.textContent.trim()
+
   return null
 }
 
-function getLocaleFromDomain(): string {
-  const tld = window.location.hostname.split('.').pop() ?? 'nl'
-  const map: Record<string, string> = { nl: 'nl_NL', be: 'nl_BE', de: 'de_DE' }
-  return map[tld] ?? 'nl_NL'
+function getLocale(): string {
+  const hostname = window.location.hostname
+  const hostnameMap: Record<string, string> = {
+    'de.ledchampion.magento2.led.p.maxserv.io': 'de_DE',
+  }
+  if (hostnameMap[hostname]) return hostnameMap[hostname]
+
+  const tld = hostname.split('.').pop() ?? 'nl'
+  const tldMap: Record<string, string> = { nl: 'nl_NL', be: 'nl_BE', de: 'de_DE' }
+  return tldMap[tld] ?? 'nl_NL'
 }
 
-const sku = extractSku()
+// Respond to popup asking for SKU on demand
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === 'GET_SKU') {
+    sendResponse({ sku: extractSku() })
+  }
+})
 
+// Also push SKU proactively on page load
+const sku = extractSku()
 if (sku) {
-  chrome.runtime.sendMessage({
-    type: 'SKU_DETECTED',
-    sku,
-    locale: getLocaleFromDomain(),
-  })
+  chrome.runtime.sendMessage({ type: 'SKU_DETECTED', sku, locale: getLocale() })
 }

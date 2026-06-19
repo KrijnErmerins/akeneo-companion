@@ -11,24 +11,10 @@ export interface AkeneoToken {
   expiresAt: number
 }
 
-export interface ProductCompleteness {
-  channel: string
-  locale: string
-  ratio: number
-}
-
-export interface AkeneoProduct {
-  identifier: string
-  family: string | null
-  enabled: boolean
-  values: Record<string, unknown>
-  completenesses?: ProductCompleteness[]
-}
-
-export interface AkeneoProductModel {
-  code: string
-  family_variant: string
-  values: Record<string, unknown>
+export type AttributeValue = {
+  locale: string | null
+  scope: string | null
+  data: unknown
 }
 
 export type ProductType = 'product' | 'product-model'
@@ -37,7 +23,7 @@ export interface ProductLookupResult {
   type: ProductType
   identifier: string
   family: string | null
-  completenesses: ProductCompleteness[]
+  values: Record<string, AttributeValue[]>
 }
 
 export interface ExtensionMessage {
@@ -57,4 +43,9 @@ export const DOMAIN_LOCALE_MAP: Record<string, string> = {
   nl: 'nl_NL',
   be: 'nl_BE',
   de: 'de_DE',
+}
+
+// Full-hostname overrides (staging/test domains that don't have a meaningful TLD)
+export const HOSTNAME_LOCALE_MAP: Record<string, string> = {
+  'de.ledchampion.magento2.led.p.maxserv.io': 'de_DE',
 }
