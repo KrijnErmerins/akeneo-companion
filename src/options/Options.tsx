@@ -11,6 +11,28 @@ const FIELDS: { key: keyof AkeneoCredentials; label: string; placeholder: string
   { key: 'password', label: 'Wachtwoord', placeholder: '', type: 'password' },
 ]
 
+type TestStatus = 'idle' | 'testing' | 'ok' | 'error'
+
+async function testAkeneoConnection(creds: AkeneoCredentials): Promise<void> {
+  const res = await fetch(`${creds.baseUrl}/api/oauth/v1/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${btoa(`${creds.clientId}:${creds.clientSecret}`)}`,
+    },
+    body: JSON.stringify({
+      grant_type: 'password',
+      username: creds.username,
+      password: creds.password,
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Auth mislukt: HTTP ${res.status}${body ? ` — ${body.slice(0, 120)}` : ''}`)
+  }
+  await res.json()
+}
+
 function OptionsApp() {
   const [form, setForm] = useState<AkeneoCredentials>({
     baseUrl: '',
@@ -20,6 +42,8 @@ function OptionsApp() {
     password: '',
   })
   const [saved, setSaved] = useState(false)
+  const [testStatus, setTestStatus] = useState<TestStatus>('idle')
+  const [testError, setTestError] = useState('')
 
   useEffect(() => {
     chrome.storage.local.get('credentials', ({ credentials }) => {
@@ -34,8 +58,20 @@ function OptionsApp() {
     })
   }
 
+  async function testConnection() {
+    setTestStatus('testing')
+    setTestError('')
+    try {
+      await testAkeneoConnection(form)
+      setTestStatus('ok')
+    } catch (err) {
+      setTestStatus('error')
+      setTestError((err as Error).message)
+    }
+  }
+
   return (
-    <div>
+    <div style={{ maxWidth: 480, margin: '32px auto', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', fontSize: 14 }}>
       <h1 style={{ fontSize: 18, marginBottom: 24 }}>Akeneo Companion — Instellingen</h1>
       {FIELDS.map(({ key, label, placeholder, type }) => (
         <div key={key} style={{ marginBottom: 16 }}>
@@ -45,16 +81,33 @@ function OptionsApp() {
             value={form[key]}
             placeholder={placeholder}
             onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-            style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }}
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }}
           />
         </div>
       ))}
-      <button
-        onClick={save}
-        style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
-      >
-        {saved ? 'Opgeslagen!' : 'Opslaan'}
-      </button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+        <button
+          onClick={save}
+          style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
+        >
+          {saved ? 'Opgeslagen!' : 'Opslaan'}
+        </button>
+        <button
+          onClick={testConnection}
+          disabled={testStatus === 'testing'}
+          style={{ padding: '8px 16px', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: 6, cursor: testStatus === 'testing' ? 'wait' : 'pointer', fontSize: 13 }}
+        >
+          {testStatus === 'testing' ? 'Testen…' : 'Test verbinding'}
+        </button>
+        {testStatus === 'ok' && (
+          <span style={{ color: '#16a34a', fontSize: 13, fontWeight: 500 }}>✓ Verbinding OK</span>
+        )}
+      </div>
+      {testStatus === 'error' && (
+        <div style={{ marginTop: 12, padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, fontSize: 12, color: '#dc2626', lineHeight: 1.5 }}>
+          {testError}
+        </div>
+      )}
     </div>
   )
 }

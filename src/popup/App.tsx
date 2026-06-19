@@ -65,6 +65,16 @@ function Row({ attr, value }: { attr: string; value: string }) {
         userSelect: 'none',
         width: '38%',
       }}>
+        <span style={{
+          display: 'inline-block',
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          background: !missing ? '#16a34a' : '#e5e7eb',
+          marginRight: 6,
+          verticalAlign: 'middle',
+          flexShrink: 0,
+        }} />
         {attr}
       </td>
       <td style={{
@@ -265,9 +275,10 @@ export default function App() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
-                  {entries.map(([attr, vals]) => (
-                    <Row key={attr} attr={attr} value={resolveValue(vals, locale)} />
-                  ))}
+                  {entries.map(([attr, vals]) => {
+                    const value = resolveValue(vals, locale)
+                    return <Row key={attr} attr={attr} value={value} />
+                  })}
                 </tbody>
               </table>
               {entries.length === 0 && (
