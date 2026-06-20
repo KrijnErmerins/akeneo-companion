@@ -279,6 +279,29 @@ export default function App() {
           </>
         )}
       </div>
+
+      {/* Footer */}
+      <div style={{
+        padding: '6px 16px',
+        borderTop: `1px solid ${HAIRLINE}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+        fontSize: 10,
+        color: ASH,
+        fontFamily: MONO,
+      }}>
+        <span>v{chrome.runtime.getManifest().version}</span>
+        <a
+          href={PIMPORT_DOWNLOAD_URL}
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: ASH, textDecoration: 'underline', cursor: 'pointer' }}
+        >
+          download
+        </a>
+      </div>
     </div>
   )
 }
