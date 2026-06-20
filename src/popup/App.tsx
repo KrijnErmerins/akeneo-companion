@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import type { ExtensionResponse, AttributeValue, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
 
-const ACCENT = '#7c3aed'
-const ACCENT_LIGHT = '#f5f3ff'
-const TEXT = '#111827'
-const TEXT_MUTED = '#6b7280'
-const BORDER = '#e5e7eb'
-const ERROR = '#dc2626'
-const BG = '#ffffff'
-const ROW_HOVER = '#fafafa'
+const CANVAS   = '#fdfcfc'
+const INK      = '#201d1d'
+const BODY     = '#424245'
+const MUTE     = '#646262'
+const ASH      = '#9a9898'
+const HAIRLINE = 'rgba(15,0,0,0.12)'
+const DANGER   = '#ff3b30'
+const SURFACE  = '#f8f7f7'
+
+const MONO = "'IBM Plex Mono', ui-monospace, monospace"
 
 function formatValue(data: unknown): string {
   if (data === null || data === undefined || data === '') return '—'
@@ -32,16 +34,16 @@ function resolveValue(values: AttributeValue[], locale: string): string {
   return match ? formatValue(match.data) : '—'
 }
 
-function Badge({ children }: { children: string }) {
+function Chip({ children }: { children: string }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '2px 8px',
-      background: ACCENT_LIGHT,
-      color: ACCENT,
-      borderRadius: 99,
-      fontSize: 11,
-      fontWeight: 600,
+      padding: '1px 6px',
+      border: `1px solid ${HAIRLINE}`,
+      borderRadius: 4,
+      fontSize: 10,
+      fontFamily: MONO,
+      color: MUTE,
       letterSpacing: '0.02em',
     }}>
       {children}
@@ -49,63 +51,77 @@ function Badge({ children }: { children: string }) {
   )
 }
 
-function MetaTag({ children }: { children: string }) {
-  return (
-    <span style={{
-      display: 'inline-block',
-      padding: '1px 6px',
-      background: '#f3f4f6',
-      color: TEXT_MUTED,
-      borderRadius: 4,
-      fontSize: 10,
-      fontWeight: 500,
-    }}>
-      {children}
-    </span>
-  )
-}
-
 function Row({ attr, value }: { attr: string; value: string }) {
+  const missing = value === '—'
   return (
-    <tr
-      style={{ borderBottom: `1px solid ${BORDER}`, cursor: 'default' }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = ROW_HOVER }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-    >
+    <tr style={{ borderBottom: `1px solid ${HAIRLINE}`, cursor: 'default' }}>
       <td style={{
-        padding: '6px 12px 6px 0',
-        color: TEXT_MUTED,
-        fontSize: 11,
+        padding: '5px 12px 5px 0',
+        color: ASH,
+        fontSize: 10,
         fontWeight: 500,
         whiteSpace: 'nowrap',
         verticalAlign: 'top',
         userSelect: 'none',
-        width: '40%',
+        width: '38%',
       }}>
         {attr}
       </td>
       <td style={{
-        padding: '6px 0',
-        fontSize: 12,
-        color: value === '—' ? '#d1d5db' : TEXT,
+        padding: '5px 0',
+        fontSize: 11,
+        color: missing ? ASH : BODY,
         wordBreak: 'break-word',
         lineHeight: 1.5,
       }}>
-        {value}
+        <span style={{ color: missing ? ASH : MUTE, marginRight: 4 }}>
+          {missing ? '[-]' : '[+]'}
+        </span>
+        {missing ? '—' : value}
       </td>
     </tr>
   )
 }
 
-function Spinner() {
+const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
+
+function UpdateBanner({ version }: { version: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEXT_MUTED, fontSize: 13 }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
-        <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="3" />
-        <path d="M12 2a10 10 0 0 1 10 10" stroke={ACCENT} strokeWidth="3" strokeLinecap="round" />
-      </svg>
-      Ophalen uit Akeneo…
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    <div style={{
+      padding: '6px 16px',
+      borderBottom: `1px solid ${HAIRLINE}`,
+      background: SURFACE,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      fontSize: 10,
+      fontFamily: MONO,
+      color: MUTE,
+      flexShrink: 0,
+    }}>
+      <span>[↑] v{version} beschikbaar —</span>
+      <a
+        href={PIMPORT_DOWNLOAD_URL}
+        target="_blank"
+        rel="noreferrer"
+        style={{ color: INK, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+      >
+        download
+      </a>
+    </div>
+  )
+}
+
+function Loader() {
+  const [frame, setFrame] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % 4), 220)
+    return () => clearInterval(id)
+  }, [])
+  const dots = ['.  ', '.. ', '...', '.. '][frame]
+  return (
+    <div style={{ padding: '20px 16px', fontSize: 11, color: MUTE, fontFamily: MONO }}>
+      [{dots}] Ophalen uit Akeneo
     </div>
   )
 }
@@ -116,6 +132,14 @@ export default function App() {
   const [locale, setLocale] = useState<string>('nl_NL')
   const [product, setProduct] = useState<ProductLookupResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    chrome.storage.local.get('updateState', (result) => {
+      const state = result.updateState as { updateAvailable: boolean; latestVersion: string } | undefined
+      if (state?.updateAvailable) setUpdateVersion(state.latestVersion)
+    })
+  }, [])
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
@@ -156,64 +180,66 @@ export default function App() {
 
   return (
     <div style={{
-      width: 380,
+      width: 480,
       maxHeight: 560,
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      background: BG,
-      color: TEXT,
+      fontFamily: MONO,
+      background: CANVAS,
+      color: INK,
     }}>
       {/* Header */}
       <div style={{
-        padding: '12px 16px',
-        borderBottom: `1px solid ${BORDER}`,
+        padding: '10px 16px',
+        borderBottom: `1px solid ${HAIRLINE}`,
         display: 'flex',
-        alignItems: 'center',
-        gap: 8,
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
         flexShrink: 0,
       }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 6,
-          background: ACCENT_LIGHT,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>Akeneo Companion</div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: INK }}>
+            AKENEO COMPANION
+          </div>
           {sku && (
-            <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 10, color: MUTE, marginTop: 2 }}>
               {sku}
             </div>
           )}
         </div>
-        {sku && <Badge>{locale}</Badge>}
+        {sku && (
+          <span style={{
+            fontSize: 10,
+            color: MUTE,
+            border: `1px solid ${HAIRLINE}`,
+            borderRadius: 4,
+            padding: '1px 6px',
+            flexShrink: 0,
+            marginTop: 1,
+          }}>
+            {locale}
+          </span>
+        )}
       </div>
+
+      {updateVersion && <UpdateBanner version={updateVersion} />}
 
       {/* Body */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {status === 'loading' && (
-          <div style={{ padding: 20 }}>
-            <Spinner />
-          </div>
-        )}
+        {status === 'loading' && <Loader />}
 
         {status === 'error' && (
           <div style={{
             margin: 16,
-            padding: '10px 12px',
-            background: '#fef2f2',
-            border: `1px solid #fecaca`,
-            borderRadius: 8,
-            fontSize: 12,
-            color: ERROR,
+            padding: '8px 12px',
+            border: `1px solid ${HAIRLINE}`,
+            borderRadius: 4,
+            background: SURFACE,
+            fontSize: 11,
+            color: DANGER,
             lineHeight: 1.5,
           }}>
-            {errorMsg}
+            <span style={{ marginRight: 6 }}>[!]</span>{errorMsg}
           </div>
         )}
 
@@ -221,16 +247,16 @@ export default function App() {
           <>
             {/* Meta bar */}
             <div style={{
-              padding: '8px 16px',
-              borderBottom: `1px solid ${BORDER}`,
+              padding: '7px 16px',
+              borderBottom: `1px solid ${HAIRLINE}`,
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               flexShrink: 0,
             }}>
-              <MetaTag>{product.type}</MetaTag>
-              {product.family && <MetaTag>{product.family}</MetaTag>}
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: TEXT_MUTED }}>
+              <Chip>{product.type}</Chip>
+              {product.family && <Chip>{product.family}</Chip>}
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: ASH }}>
                 {filledCount}/{entries.length} ingevuld
               </span>
             </div>
@@ -245,8 +271,8 @@ export default function App() {
                 </tbody>
               </table>
               {entries.length === 0 && (
-                <p style={{ fontSize: 12, color: TEXT_MUTED, padding: '16px 0' }}>
-                  Geen attributen gevonden.
+                <p style={{ fontSize: 11, color: MUTE, padding: '16px 0' }}>
+                  [-] Geen attributen gevonden.
                 </p>
               )}
             </div>

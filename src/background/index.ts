@@ -1,6 +1,9 @@
 import type { ExtensionMessage, ExtensionResponse } from '../types/akeneo'
 import { lookupProduct } from './akeneo'
 import { credentials } from './credentials'
+import { checkForUpdate } from './update-checker'
+
+checkForUpdate()
 
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse: (r: ExtensionResponse) => void) => {

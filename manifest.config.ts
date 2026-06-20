@@ -1,10 +1,11 @@
 import { defineManifest } from '@crxjs/vite-plugin'
+import packageJson from './package.json'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default defineManifest({
   manifest_version: 3,
   name: 'Akeneo Companion',
-  version: '0.1.0',
+  version: packageJson.version,
   description: 'Check Akeneo product completeness from any LedKoning PDP',
   icons: {
     '16': 'icons/icon16.png',
@@ -15,7 +16,7 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
     default_icon: 'icons/icon48.png',
   },
-background: {
+  background: {
     service_worker: 'src/background/index.ts',
     type: 'module',
   },
@@ -56,6 +57,7 @@ background: {
     'https://ledchampion.de/*',
     'https://de.ledchampion.magento2.led.p.maxserv.io/*',
     'https://*.akeneo.com/*',
+    'https://api.github.com/*',
   ],
   permissions: ['storage', 'activeTab'],
 } as any)
