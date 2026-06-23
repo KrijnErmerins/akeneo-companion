@@ -13,17 +13,44 @@ const SURFACE  = '#f8f7f7'
 
 const MONO = "'IBM Plex Mono', ui-monospace, monospace"
 
+const UNIT_MAP: Record<string, string> = {
+  WATT: 'W', KILOWATT: 'kW',
+  KILOGRAM: 'kg', GRAM: 'g', MILLIGRAM: 'mg',
+  METER: 'm', CENTIMETER: 'cm', MILLIMETER: 'mm',
+  LUMEN: 'lm', KELVIN: 'K', VOLT: 'V', AMPERE: 'A',
+  CELSIUS: '°C', FAHRENHEIT: '°F',
+}
+
+function formatObj(obj: Record<string, unknown>): string {
+  const { amount, unit, currency } = obj as { amount?: unknown; unit?: unknown; currency?: unknown }
+  if (typeof amount === 'number' && typeof unit === 'string') {
+    return `${amount} ${UNIT_MAP[unit.toUpperCase()] ?? unit}`
+  }
+  if (typeof amount === 'number' && typeof currency === 'string') {
+    try {
+      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency }).format(amount)
+    } catch {
+      return `${amount} ${currency}`
+    }
+  }
+  return Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join(', ')
+}
+
 function formatValue(data: unknown): string {
   if (data === null || data === undefined || data === '') return '—'
   if (typeof data === 'boolean') return data ? 'Ja' : 'Nee'
   if (Array.isArray(data)) {
     if (data.length === 0) return '—'
     return data
-      .map((v) => (typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v)))
+      .map((v) => (typeof v === 'object' && v !== null ? formatObj(v as Record<string, unknown>) : String(v)))
       .join(', ')
   }
-  if (typeof data === 'object') return JSON.stringify(data)
+  if (typeof data === 'object') return formatObj(data as Record<string, unknown>)
   return String(data)
+}
+
+function prettifyAttr(key: string): string {
+  return key.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
 }
 
 function resolveValue(values: AttributeValue[], locale: string): string {
@@ -75,7 +102,7 @@ function Row({ attr, value }: { attr: string; value: string }) {
           verticalAlign: 'middle',
           flexShrink: 0,
         }} />
-        {attr}
+        {prettifyAttr(attr)}
       </td>
       <td style={{
         padding: '5px 0',
