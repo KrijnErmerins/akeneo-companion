@@ -22,6 +22,12 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+        env:
+          VITE_AKENEO_BASE_URL: ${{ secrets.VITE_AKENEO_BASE_URL }}
+          VITE_AKENEO_CLIENT_ID: ${{ secrets.VITE_AKENEO_CLIENT_ID }}
+          VITE_AKENEO_CLIENT_SECRET: ${{ secrets.VITE_AKENEO_CLIENT_SECRET }}
+          VITE_AKENEO_USERNAME: ${{ secrets.VITE_AKENEO_USERNAME }}
+          VITE_AKENEO_PASSWORD: ${{ secrets.VITE_AKENEO_PASSWORD }}
 
       - name: Zip extension
         run: cd dist && zip -r ../akeneo-companion.zip . && cd ..
