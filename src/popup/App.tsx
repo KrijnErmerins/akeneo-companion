@@ -330,21 +330,49 @@ export default function App() {
           )}
         </div>
         {sku && (
-          <span style={{
-            fontSize: 11,
-            color: MUTED,
-            background: BODY_BG,
-            border: `1px solid ${HAIRLINE}`,
-            borderRadius: 8,
-            padding: '3px 8px',
-            fontFamily: FONT_BODY,
-            fontWeight: 500,
-            flexShrink: 0,
-            marginTop: 1,
-            lineHeight: 1.4,
-          }}>
-            {locale}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 1 }}>
+            <span style={{
+              fontSize: 11,
+              color: MUTED,
+              background: BODY_BG,
+              border: `1px solid ${HAIRLINE}`,
+              borderRadius: 8,
+              padding: '3px 8px',
+              fontFamily: FONT_BODY,
+              fontWeight: 500,
+              lineHeight: 1.4,
+            }}>
+              {locale}
+            </span>
+            {status === 'done' && product && (
+              <button
+                title="Bekijk in Akeneo"
+                onClick={() => {
+                  const baseUrl = import.meta.env.VITE_AKENEO_BASE_URL as string
+                  const segment = product.type === 'product-model' ? 'product-model' : 'product'
+                  chrome.tabs.create({ url: `${baseUrl}/#/enrich/${segment}/${sku}/attributes` })
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
+                  padding: 2,
+                  cursor: 'pointer',
+                  color: PRIMARY,
+                  borderRadius: 4,
+                  lineHeight: 0,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 2H2.5A1.5 1.5 0 0 0 1 3.5v8A1.5 1.5 0 0 0 2.5 13h8A1.5 1.5 0 0 0 12 11.5V8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M8.5 1H13v4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M13 1L6.5 7.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                </svg>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
