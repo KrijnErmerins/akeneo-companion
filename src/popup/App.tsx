@@ -22,15 +22,17 @@ const UNIT_MAP: Record<string, string> = {
 }
 
 function formatObj(obj: Record<string, unknown>): string {
-  const { amount, unit, currency } = obj as { amount?: unknown; unit?: unknown; currency?: unknown }
-  if (typeof amount === 'number' && typeof unit === 'string') {
-    return `${amount} ${UNIT_MAP[unit.toUpperCase()] ?? unit}`
+  const { amount, unit, symbol, currency } = obj as { amount?: unknown; unit?: unknown; symbol?: unknown; currency?: unknown }
+  const numericAmount = typeof amount === 'number' ? amount : (typeof amount === 'string' ? parseFloat(amount) : NaN)
+  if (!isNaN(numericAmount) && typeof unit === 'string') {
+    const displayUnit = typeof symbol === 'string' && symbol ? symbol : (UNIT_MAP[unit.toUpperCase()] ?? unit)
+    return `${numericAmount} ${displayUnit}`
   }
-  if (typeof amount === 'number' && typeof currency === 'string') {
+  if (!isNaN(numericAmount) && typeof currency === 'string') {
     try {
-      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency }).format(amount)
+      return new Intl.NumberFormat('nl-NL', { style: 'currency', currency }).format(numericAmount)
     } catch {
-      return `${amount} ${currency}`
+      return `${numericAmount} ${currency}`
     }
   }
   return Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join(', ')
