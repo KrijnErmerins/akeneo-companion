@@ -350,7 +350,7 @@ export default function App() {
                 onClick={() => {
                   const baseUrl = import.meta.env.VITE_AKENEO_BASE_URL as string
                   const segment = product.type === 'product-model' ? 'product-model' : 'product'
-                  chrome.tabs.create({ url: `${baseUrl}/#/enrich/${segment}/${sku}/attributes` })
+                  chrome.tabs.create({ url: `${baseUrl}/#/enrich/${segment}/${sku}` })
                 }}
                 style={{
                   display: 'flex',
