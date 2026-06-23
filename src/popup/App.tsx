@@ -200,7 +200,17 @@ export default function App() {
   useEffect(() => {
     chrome.storage.local.get('updateState', (result) => {
       const state = result.updateState as { updateAvailable: boolean; latestVersion: string } | undefined
-      if (state?.updateAvailable) setUpdateVersion(state.latestVersion)
+      if (state?.updateAvailable) {
+        const cur = chrome.runtime.getManifest().version.split('.').map(Number)
+        const lat = state.latestVersion.split('.').map(Number)
+        let latestIsNewer = false
+        for (let i = 0; i < 3; i++) {
+          const l = lat[i] ?? 0; const c = cur[i] ?? 0
+          if (l > c) { latestIsNewer = true; break }
+          if (l < c) break
+        }
+        if (latestIsNewer) setUpdateVersion(state.latestVersion)
+      }
     })
   }, [])
 

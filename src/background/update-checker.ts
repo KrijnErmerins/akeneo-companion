@@ -23,6 +23,13 @@ function isNewer(latest: string, current: string): boolean {
 export async function checkForUpdate(): Promise<void> {
   const stored = await chrome.storage.local.get('updateState')
   const state = stored.updateState as UpdateState | undefined
+  const currentVersion = chrome.runtime.getManifest().version
+
+  if (state?.updateAvailable && !isNewer(state.latestVersion, currentVersion)) {
+    await chrome.storage.local.set({ updateState: { ...state, updateAvailable: false } })
+    chrome.action.setBadgeText({ text: '' })
+    return
+  }
 
   if (state && Date.now() - state.checkedAt < CHECK_INTERVAL_MS) return
 
@@ -35,7 +42,6 @@ export async function checkForUpdate(): Promise<void> {
 
     const json = await res.json() as { tag_name: string }
     const latestVersion = parseVersion(json.tag_name)
-    const currentVersion = chrome.runtime.getManifest().version
     const updateAvailable = isNewer(latestVersion, currentVersion)
 
     const newState: UpdateState = { latestVersion, checkedAt: Date.now(), updateAvailable }
