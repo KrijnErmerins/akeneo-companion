@@ -1,6 +1,6 @@
 import type { ExtensionMessage, ExtensionResponse } from '../types/akeneo'
 import { lookupProduct } from './akeneo'
-import { getCredentials } from './credentials'
+import { credentials } from './credentials'
 import { checkForUpdate } from './update-checker'
 
 checkForUpdate()
@@ -12,8 +12,7 @@ chrome.runtime.onMessage.addListener(
       return false
     }
 
-    getCredentials()
-      .then((creds) => lookupProduct(message.sku!, creds))
+    lookupProduct(message.sku!, credentials)
       .then((data) => sendResponse({ success: true, data }))
       .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
 
