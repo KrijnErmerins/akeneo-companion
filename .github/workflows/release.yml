@@ -21,6 +21,11 @@ jobs:
 
       - run: npm ci
 
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm version --no-git-tag-version "$VERSION"
+
       - run: npm run build
         env:
           VITE_AKENEO_BASE_URL: ${{ secrets.VITE_AKENEO_BASE_URL }}
