@@ -3,6 +3,26 @@ import { createRoot } from 'react-dom/client'
 import { StrictMode } from 'react'
 import type { AkeneoCredentials } from '../types/akeneo'
 
+// Design tokens from DESIGN.md
+const PRIMARY       = '#4386F0'
+const PRIMARY_DARK  = '#2D6DE0'
+const PRIMARY_LIGHT = '#E8F0FE'
+const CANVAS        = '#FFFFFF'
+const BODY_BG       = '#F8FAFC'
+const INK           = '#333333'
+const BODY          = '#4B5563'
+const MUTED         = '#6B7280'
+const HAIRLINE      = '#E2E8F0'
+const BORDER_STRONG = '#D1D5DB'
+const SUCCESS       = '#22C55E'
+const SUCCESS_TEXT  = '#166534'
+const DANGER_BG     = '#FEF2F2'
+const DANGER_TEXT   = '#991B1B'
+const DANGER_BORDER = '#FECACA'
+
+const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+const FONT_BODY    = "'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+
 const FIELDS: { key: keyof AkeneoCredentials; label: string; placeholder: string; type?: string }[] = [
   { key: 'baseUrl', label: 'Akeneo URL', placeholder: 'https://ledkoning.cloud.akeneo.com' },
   { key: 'clientId', label: 'Client ID', placeholder: '' },
@@ -71,43 +91,171 @@ function OptionsApp() {
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '32px auto', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', fontSize: 14 }}>
-      <h1 style={{ fontSize: 18, marginBottom: 24 }}>Akeneo Companion — Instellingen</h1>
-      {FIELDS.map(({ key, label, placeholder, type }) => (
-        <div key={key} style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{label}</label>
-          <input
-            type={type ?? 'text'}
-            value={form[key]}
-            placeholder={placeholder}
-            onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-            style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }}
-          />
+    <div style={{
+      maxWidth: 480,
+      margin: '0 auto',
+      fontFamily: FONT_BODY,
+      fontSize: 14,
+      color: INK,
+    }}>
+      {/* Card */}
+      <div style={{
+        background: CANVAS,
+        borderRadius: 12,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        overflow: 'hidden',
+      }}>
+        {/* Card header */}
+        <div style={{
+          padding: '16px 20px',
+          borderBottom: `1px solid ${HAIRLINE}`,
+          background: BODY_BG,
+        }}>
+          <h1 style={{
+            fontSize: 20,
+            fontWeight: 700,
+            fontFamily: FONT_HEADING,
+            letterSpacing: '-0.025em',
+            color: INK,
+            lineHeight: 1.2,
+            margin: 0,
+          }}>
+            Akeneo Companion
+          </h1>
+          <p style={{ fontSize: 13, color: MUTED, marginTop: 4, fontFamily: FONT_BODY }}>
+            Instellingen
+          </p>
         </div>
-      ))}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
-        <button
-          onClick={save}
-          style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
-        >
-          {saved ? 'Opgeslagen!' : 'Opslaan'}
-        </button>
-        <button
-          onClick={testConnection}
-          disabled={testStatus === 'testing'}
-          style={{ padding: '8px 16px', background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: 6, cursor: testStatus === 'testing' ? 'wait' : 'pointer', fontSize: 13 }}
-        >
-          {testStatus === 'testing' ? 'Testen…' : 'Test verbinding'}
-        </button>
-        {testStatus === 'ok' && (
-          <span style={{ color: '#16a34a', fontSize: 13, fontWeight: 500 }}>✓ Verbinding OK</span>
-        )}
+
+        {/* Card body */}
+        <div style={{ padding: 20 }}>
+          {FIELDS.map(({ key, label, placeholder, type }) => (
+            <div key={key} style={{ marginBottom: 16 }}>
+              <label style={{
+                display: 'block',
+                fontSize: 14,
+                fontWeight: 500,
+                fontFamily: FONT_BODY,
+                color: BODY,
+                marginBottom: 6,
+              }}>
+                {label}
+              </label>
+              <input
+                type={type ?? 'text'}
+                value={form[key]}
+                placeholder={placeholder}
+                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '7px 12px',
+                  border: `1px solid ${HAIRLINE}`,
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontFamily: FONT_BODY,
+                  color: INK,
+                  background: CANVAS,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  lineHeight: 1.5,
+                  transition: 'border-color 150ms, box-shadow 150ms',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = PRIMARY
+                  e.target.style.boxShadow = `0 0 0 3px ${PRIMARY_LIGHT}`
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = HAIRLINE
+                  e.target.style.boxShadow = 'none'
+                }}
+              />
+            </div>
+          ))}
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+            <button
+              onClick={save}
+              style={{
+                padding: '7px 14px',
+                background: PRIMARY,
+                color: '#000000',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                fontFamily: FONT_BODY,
+                lineHeight: 1.4,
+                transition: 'background 150ms',
+              }}
+              onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.background = PRIMARY_DARK }}
+              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = saved ? PRIMARY : PRIMARY }}
+            >
+              {saved ? 'Opgeslagen!' : 'Opslaan'}
+            </button>
+            <button
+              onClick={testConnection}
+              disabled={testStatus === 'testing'}
+              style={{
+                padding: '7px 14px',
+                background: CANVAS,
+                color: BODY,
+                border: `1px solid ${BORDER_STRONG}`,
+                borderRadius: 8,
+                cursor: testStatus === 'testing' ? 'wait' : 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                fontFamily: FONT_BODY,
+                lineHeight: 1.4,
+                transition: 'background 150ms, border-color 150ms',
+              }}
+              onMouseEnter={(e) => {
+                const btn = e.target as HTMLButtonElement
+                if (!btn.disabled) {
+                  btn.style.background = BODY_BG
+                  btn.style.borderColor = BORDER_STRONG
+                }
+              }}
+              onMouseLeave={(e) => {
+                const btn = e.target as HTMLButtonElement
+                btn.style.background = CANVAS
+                btn.style.borderColor = BORDER_STRONG
+              }}
+            >
+              {testStatus === 'testing' ? 'Testen…' : 'Test verbinding'}
+            </button>
+            {testStatus === 'ok' && (
+              <span style={{
+                color: SUCCESS_TEXT,
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: FONT_BODY,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}>
+                <span style={{ color: SUCCESS }}>✓</span> Verbinding OK
+              </span>
+            )}
+          </div>
+
+          {testStatus === 'error' && (
+            <div style={{
+              marginTop: 12,
+              padding: '12px 14px',
+              background: DANGER_BG,
+              border: `1px solid ${DANGER_BORDER}`,
+              borderRadius: 12,
+              fontSize: 13,
+              fontFamily: FONT_BODY,
+              color: DANGER_TEXT,
+              lineHeight: 1.5,
+            }}>
+              {testError}
+            </div>
+          )}
+        </div>
       </div>
-      {testStatus === 'error' && (
-        <div style={{ marginTop: 12, padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, fontSize: 12, color: '#dc2626', lineHeight: 1.5 }}>
-          {testError}
-        </div>
-      )}
     </div>
   )
 }

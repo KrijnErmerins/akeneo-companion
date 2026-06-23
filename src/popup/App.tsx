@@ -2,16 +2,25 @@ import { useEffect, useState } from 'react'
 import type { ExtensionResponse, AttributeValue, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
 
-const CANVAS   = '#fdfcfc'
-const INK      = '#201d1d'
-const BODY     = '#424245'
-const MUTE     = '#646262'
-const ASH      = '#9a9898'
-const HAIRLINE = 'rgba(15,0,0,0.12)'
-const DANGER   = '#ff3b30'
-const SURFACE  = '#f8f7f7'
+// Design tokens from DESIGN.md
+const PRIMARY       = '#4386F0'
+const PRIMARY_DARK  = '#2D6DE0'
+const PRIMARY_LIGHT = '#E8F0FE'
+const PRIMARY_MID   = '#C5D8FC'
+const CANVAS        = '#FFFFFF'
+const BODY_BG       = '#F8FAFC'
+const INK           = '#333333'
+const BODY          = '#4B5563'
+const MUTED         = '#6B7280'
+const HAIRLINE      = '#E2E8F0'
+const DANGER        = '#DC2626'
+const DANGER_BG     = '#FEF2F2'
+const DANGER_TEXT   = '#991B1B'
+const DANGER_BORDER = '#FECACA'
+const SUCCESS       = '#22C55E'
 
-const MONO = "'IBM Plex Mono', ui-monospace, monospace"
+const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+const FONT_BODY    = "'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
 
 const UNIT_MAP: Record<string, string> = {
   WATT: 'W', KILOWATT: 'kW',
@@ -67,13 +76,17 @@ function Chip({ children }: { children: string }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '1px 6px',
-      border: `1px solid ${HAIRLINE}`,
-      borderRadius: 4,
-      fontSize: 10,
-      fontFamily: MONO,
-      color: MUTE,
+      padding: '2px 8px',
+      background: PRIMARY_LIGHT,
+      border: `1px solid ${PRIMARY_MID}`,
+      borderRadius: 999,
+      fontSize: 11,
+      fontFamily: FONT_BODY,
+      fontWeight: 600,
+      color: PRIMARY,
       letterSpacing: '0.02em',
+      textTransform: 'uppercase',
+      lineHeight: 1.4,
     }}>
       {children}
     </span>
@@ -85,21 +98,25 @@ function Row({ attr, value }: { attr: string; value: string }) {
   return (
     <tr style={{ borderBottom: `1px solid ${HAIRLINE}`, cursor: 'default' }}>
       <td style={{
-        padding: '5px 12px 5px 0',
-        color: ASH,
-        fontSize: 10,
-        fontWeight: 500,
+        padding: '6px 12px 6px 0',
+        color: MUTED,
+        fontSize: 11,
+        fontWeight: 600,
+        fontFamily: FONT_BODY,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
         whiteSpace: 'nowrap',
         verticalAlign: 'top',
         userSelect: 'none',
         width: '38%',
+        lineHeight: 1.4,
       }}>
         <span style={{
           display: 'inline-block',
           width: 6,
           height: 6,
           borderRadius: '50%',
-          background: !missing ? '#16a34a' : '#e5e7eb',
+          background: !missing ? SUCCESS : HAIRLINE,
           marginRight: 6,
           verticalAlign: 'middle',
           flexShrink: 0,
@@ -107,15 +124,13 @@ function Row({ attr, value }: { attr: string; value: string }) {
         {prettifyAttr(attr)}
       </td>
       <td style={{
-        padding: '5px 0',
-        fontSize: 11,
-        color: missing ? ASH : BODY,
+        padding: '6px 0',
+        fontSize: 13,
+        fontFamily: FONT_BODY,
+        color: missing ? MUTED : BODY,
         wordBreak: 'break-word',
         lineHeight: 1.5,
       }}>
-        <span style={{ color: missing ? ASH : MUTE, marginRight: 4 }}>
-          {missing ? '[-]' : '[+]'}
-        </span>
         {missing ? '—' : value}
       </td>
     </tr>
@@ -127,25 +142,25 @@ const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/
 function UpdateBanner({ version }: { version: string }) {
   return (
     <div style={{
-      padding: '6px 16px',
+      padding: '8px 16px',
       borderBottom: `1px solid ${HAIRLINE}`,
-      background: SURFACE,
+      background: PRIMARY_LIGHT,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
-      fontSize: 10,
-      fontFamily: MONO,
-      color: MUTE,
+      fontSize: 12,
+      fontFamily: FONT_BODY,
+      color: PRIMARY,
       flexShrink: 0,
     }}>
-      <span>[↑] v{version} beschikbaar —</span>
+      <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
       <a
         href={PIMPORT_DOWNLOAD_URL}
         target="_blank"
         rel="noreferrer"
-        style={{ color: INK, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+        style={{ color: PRIMARY_DARK, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', marginLeft: 'auto' }}
       >
-        download
+        Download
       </a>
     </div>
   )
@@ -157,10 +172,19 @@ function Loader() {
     const id = setInterval(() => setFrame((f) => (f + 1) % 4), 220)
     return () => clearInterval(id)
   }, [])
-  const dots = ['.  ', '.. ', '...', '.. '][frame]
+  const dots = ['●  ', '●● ', '●●●', '●● '][frame]
   return (
-    <div style={{ padding: '20px 16px', fontSize: 11, color: MUTE, fontFamily: MONO }}>
-      [{dots}] Ophalen uit Akeneo
+    <div style={{
+      padding: '24px 16px',
+      fontSize: 13,
+      fontFamily: FONT_BODY,
+      color: MUTED,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+    }}>
+      <span style={{ color: PRIMARY, letterSpacing: '0.15em', fontSize: 10 }}>{dots}</span>
+      <span>Ophalen uit Akeneo</span>
     </div>
   )
 }
@@ -223,38 +247,56 @@ export default function App() {
       maxHeight: 560,
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: MONO,
+      fontFamily: FONT_BODY,
       background: CANVAS,
       color: INK,
     }}>
       {/* Header */}
       <div style={{
-        padding: '10px 16px',
+        padding: '12px 16px',
         borderBottom: `1px solid ${HAIRLINE}`,
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
         flexShrink: 0,
+        background: CANVAS,
       }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: INK }}>
-            AKENEO COMPANION
+          <div style={{
+            fontSize: 16,
+            fontWeight: 700,
+            fontFamily: FONT_HEADING,
+            letterSpacing: '-0.025em',
+            color: INK,
+            lineHeight: 1.2,
+          }}>
+            Akeneo Companion
           </div>
           {sku && (
-            <div style={{ fontSize: 10, color: MUTE, marginTop: 2 }}>
+            <div style={{
+              fontSize: 12,
+              color: MUTED,
+              marginTop: 3,
+              fontFamily: FONT_BODY,
+              fontWeight: 400,
+            }}>
               {sku}
             </div>
           )}
         </div>
         {sku && (
           <span style={{
-            fontSize: 10,
-            color: MUTE,
+            fontSize: 11,
+            color: MUTED,
+            background: BODY_BG,
             border: `1px solid ${HAIRLINE}`,
-            borderRadius: 4,
-            padding: '1px 6px',
+            borderRadius: 8,
+            padding: '3px 8px',
+            fontFamily: FONT_BODY,
+            fontWeight: 500,
             flexShrink: 0,
             marginTop: 1,
+            lineHeight: 1.4,
           }}>
             {locale}
           </span>
@@ -270,15 +312,16 @@ export default function App() {
         {status === 'error' && (
           <div style={{
             margin: 16,
-            padding: '8px 12px',
-            border: `1px solid ${HAIRLINE}`,
-            borderRadius: 4,
-            background: SURFACE,
-            fontSize: 11,
-            color: DANGER,
+            padding: '12px 14px',
+            border: `1px solid ${DANGER_BORDER}`,
+            borderRadius: 12,
+            background: DANGER_BG,
+            fontSize: 13,
+            fontFamily: FONT_BODY,
+            color: DANGER_TEXT,
             lineHeight: 1.5,
           }}>
-            <span style={{ marginRight: 6 }}>[!]</span>{errorMsg}
+            <span style={{ marginRight: 6, color: DANGER }}>⚠</span>{errorMsg}
           </div>
         )}
 
@@ -286,16 +329,17 @@ export default function App() {
           <>
             {/* Meta bar */}
             <div style={{
-              padding: '7px 16px',
+              padding: '8px 16px',
               borderBottom: `1px solid ${HAIRLINE}`,
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               flexShrink: 0,
+              background: BODY_BG,
             }}>
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
-              <span style={{ marginLeft: 'auto', fontSize: 10, color: ASH }}>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: FONT_BODY }}>
                 {filledCount}/{entries.length} ingevuld
               </span>
             </div>
@@ -311,8 +355,8 @@ export default function App() {
                 </tbody>
               </table>
               {entries.length === 0 && (
-                <p style={{ fontSize: 11, color: MUTE, padding: '16px 0' }}>
-                  [-] Geen attributen gevonden.
+                <p style={{ fontSize: 13, color: MUTED, padding: '20px 0', fontFamily: FONT_BODY }}>
+                  Geen attributen gevonden.
                 </p>
               )}
             </div>
@@ -322,24 +366,25 @@ export default function App() {
 
       {/* Footer */}
       <div style={{
-        padding: '6px 16px',
+        padding: '8px 16px',
         borderTop: `1px solid ${HAIRLINE}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
-        fontSize: 10,
-        color: ASH,
-        fontFamily: MONO,
+        fontSize: 11,
+        color: MUTED,
+        fontFamily: FONT_BODY,
+        background: CANVAS,
       }}>
         <span>v{chrome.runtime.getManifest().version}</span>
         <a
           href={PIMPORT_DOWNLOAD_URL}
           target="_blank"
           rel="noreferrer"
-          style={{ color: ASH, textDecoration: 'underline', cursor: 'pointer' }}
+          style={{ color: PRIMARY, textDecoration: 'none', cursor: 'pointer', fontWeight: 500 }}
         >
-          download
+          Download
         </a>
       </div>
     </div>
