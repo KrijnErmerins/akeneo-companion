@@ -212,18 +212,22 @@ export default function App() {
       const detectedLocale = HOSTNAME_LOCALE_MAP[hostname] ?? DOMAIN_LOCALE_MAP[tld] ?? 'nl_NL'
       setLocale(detectedLocale)
 
-      chrome.tabs.sendMessage(tab!.id!, { type: 'GET_SKU' }, (response) => {
-        if (chrome.runtime.lastError || !response?.sku) {
-          setStatus('error')
-          setErrorMsg('Geen SKU gevonden op deze pagina.')
-          return
-        }
+      const tabId = tab!.id!
 
-        const detectedSku: string = response.sku
-        setSku(detectedSku)
+      const fetchSku = (callback: (sku: string | null) => void) => {
+        chrome.tabs.sendMessage(tabId, { type: 'GET_SKU' }, (response) => {
+          if (chrome.runtime.lastError || !response?.sku) {
+            callback(null)
+          } else {
+            callback(response.sku as string)
+          }
+        })
+      }
 
+      const lookupAndRender = (sku: string) => {
+        setSku(sku)
         chrome.runtime.sendMessage(
-          { type: 'GET_PRODUCT', sku: detectedSku, locale: detectedLocale },
+          { type: 'GET_PRODUCT', sku, locale: detectedLocale },
           (res: ExtensionResponse) => {
             if (res.success && res.data) {
               setProduct(res.data)
@@ -234,6 +238,37 @@ export default function App() {
             }
           },
         )
+      }
+
+      fetchSku((sku) => {
+        if (sku) {
+          lookupAndRender(sku)
+          return
+        }
+
+        // Content script not present — inject it and retry once
+        const files = (chrome.runtime.getManifest().content_scripts?.[0]?.js ?? []) as string[]
+        if (files.length === 0) {
+          setStatus('error')
+          setErrorMsg('Geen SKU gevonden op deze pagina.')
+          return
+        }
+
+        chrome.scripting.executeScript({ target: { tabId }, files }, () => {
+          if (chrome.runtime.lastError) {
+            setStatus('error')
+            setErrorMsg('Geen SKU gevonden op deze pagina.')
+            return
+          }
+          fetchSku((retrySku) => {
+            if (retrySku) {
+              lookupAndRender(retrySku)
+            } else {
+              setStatus('error')
+              setErrorMsg('Geen SKU gevonden op deze pagina.')
+            }
+          })
+        })
       })
     })
   }, [])

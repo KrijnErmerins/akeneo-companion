@@ -63,5 +63,5 @@ export default defineManifest({
     'https://*.akeneo.com/*',
     'https://api.github.com/*',
   ],
-  permissions: ['storage', 'activeTab'],
+  permissions: ['storage', 'activeTab', 'scripting'],
 } as any)
