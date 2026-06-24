@@ -270,7 +270,31 @@ export default function App() {
             setErrorMsg('Geen SKU gevonden op deze pagina.')
             return
           }
-          fetchSku((retrySku) => {
+          // Use a second executeScript instead of sendMessage to avoid the listener race condition.
+          // Extraction order mirrors extractSku() in sku-logic.ts — keep in sync.
+          chrome.scripting.executeScript({
+            target: { tabId },
+            func: () => {
+              const scripts = document.querySelectorAll('script[type="application/ld+json"]')
+              for (const s of scripts) {
+                try {
+                  const d = JSON.parse(s.textContent ?? '') as unknown
+                  const items = Array.isArray(d) ? d : [d]
+                  for (const item of items as Record<string, unknown>[]) {
+                    if (item['@type'] === 'Product' && item.sku) return String(item.sku)
+                  }
+                } catch { /* malformed JSON-LD */ }
+              }
+              const itemprop = document.querySelector('[itemprop="sku"]')
+              if (itemprop?.textContent?.trim()) return itemprop.textContent.trim()
+              const meta = document.querySelector<HTMLMetaElement>('meta[property="product:retailer_item_id"]')
+              if (meta?.content) return meta.content
+              const skuEl = document.querySelector('.product.attribute.sku .value')
+              if (skuEl?.textContent?.trim()) return skuEl.textContent.trim()
+              return null
+            },
+          }, (results) => {
+            const retrySku = results?.[0]?.result as string | null
             if (retrySku) {
               lookupAndRender(retrySku)
             } else {
