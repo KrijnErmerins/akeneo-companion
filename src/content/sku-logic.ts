@@ -27,6 +27,27 @@ export function extractSku(doc: Document = document): string | null {
   const skuEl = doc.querySelector('.product.attribute.sku .value')
   if (skuEl?.textContent?.trim()) return skuEl.textContent.trim()
 
+  // 5. data-product-sku / data-sku attributes (custom Magento 2 themes)
+  for (const attr of ['data-product-sku', 'data-sku']) {
+    const el = doc.querySelector(`[${attr}]`)
+    const val = el?.getAttribute(attr)?.trim()
+    if (val) return val
+  }
+
+  // 6. Magento 2 x-magento-init / x-magento-config inline JSON — look for "sku":"..." keys
+  const magentoScripts = doc.querySelectorAll<HTMLScriptElement>(
+    'script[type="text/x-magento-init"], script[type="text/x-magento-config"]',
+  )
+  for (const script of magentoScripts) {
+    const raw = script.textContent ?? ''
+    const m = raw.match(/"(?:sku|productSku|product_sku)"\s*:\s*"([^"]+)"/)
+    if (m?.[1]) return m[1]
+  }
+
+  // 7. Broader CSS selector for custom themes that wrap SKU differently
+  const broadSkuEl = doc.querySelector('[class*="sku"] .value, [class*="sku"] [class*="value"]')
+  if (broadSkuEl?.textContent?.trim()) return broadSkuEl.textContent.trim()
+
   return null
 }
 
