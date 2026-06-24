@@ -267,14 +267,14 @@ export default function App() {
         const files = (chrome.runtime.getManifest().content_scripts?.[0]?.js ?? []) as string[]
         if (files.length === 0) {
           setStatus('error')
-          setErrorMsg('Geen SKU gevonden op deze pagina.')
+          setErrorMsg('Geen SKU gevonden. Zorg dat je op een productpagina staat en ververs de pagina (F5).')
           return
         }
 
         chrome.scripting.executeScript({ target: { tabId }, files }, () => {
           if (chrome.runtime.lastError) {
             setStatus('error')
-            setErrorMsg('Geen SKU gevonden op deze pagina.')
+            setErrorMsg('Geen SKU gevonden. Zorg dat je op een productpagina staat en ververs de pagina (F5).')
             return
           }
           // Use a second executeScript instead of sendMessage to avoid the listener race condition.
@@ -282,6 +282,7 @@ export default function App() {
           chrome.scripting.executeScript({
             target: { tabId },
             func: () => {
+              // 1. JSON-LD structured data
               const scripts = document.querySelectorAll('script[type="application/ld+json"]')
               for (const s of scripts) {
                 try {
@@ -292,12 +293,31 @@ export default function App() {
                   }
                 } catch { /* malformed JSON-LD */ }
               }
+              // 2. itemprop="sku"
               const itemprop = document.querySelector('[itemprop="sku"]')
               if (itemprop?.textContent?.trim()) return itemprop.textContent.trim()
+              // 3. Meta tag
               const meta = document.querySelector<HTMLMetaElement>('meta[property="product:retailer_item_id"]')
               if (meta?.content) return meta.content
+              // 4. Magento 2 Luma CSS
               const skuEl = document.querySelector('.product.attribute.sku .value')
               if (skuEl?.textContent?.trim()) return skuEl.textContent.trim()
+              // 5. data-product-sku / data-sku attributes
+              for (const attr of ['data-product-sku', 'data-sku']) {
+                const el = document.querySelector(`[${attr}]`)
+                const val = el?.getAttribute(attr)?.trim()
+                if (val) return val
+              }
+              // 6. Magento 2 x-magento-init / x-magento-config inline JSON
+              const mageScripts = document.querySelectorAll('script[type="text/x-magento-init"], script[type="text/x-magento-config"]')
+              for (const ms of mageScripts) {
+                const raw = ms.textContent ?? ''
+                const m = raw.match(/"(?:sku|productSku|product_sku)"\s*:\s*"([^"]+)"/)
+                if (m?.[1]) return m[1]
+              }
+              // 7. Broader CSS selector for custom themes
+              const broadSkuEl = document.querySelector('[class*="sku"] .value, [class*="sku"] [class*="value"]')
+              if (broadSkuEl?.textContent?.trim()) return broadSkuEl.textContent.trim()
               return null
             },
           }, (results) => {
@@ -306,7 +326,7 @@ export default function App() {
               lookupAndRender(retrySku)
             } else {
               setStatus('error')
-              setErrorMsg('Geen SKU gevonden op deze pagina.')
+              setErrorMsg('Geen SKU gevonden. Zorg dat je op een productpagina staat en ververs de pagina (F5).')
             }
           })
         })
