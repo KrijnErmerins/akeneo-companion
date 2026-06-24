@@ -60,6 +60,10 @@ function formatValue(data: unknown): string {
   return String(data)
 }
 
+function isHtml(str: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(str)
+}
+
 function prettifyAttr(key: string): string {
   return key.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
 }
@@ -131,7 +135,10 @@ function Row({ attr, value }: { attr: string; value: string }) {
         wordBreak: 'break-word',
         lineHeight: 1.5,
       }}>
-        {missing ? '—' : value}
+        {missing ? '—' : isHtml(value)
+          ? <span dangerouslySetInnerHTML={{ __html: value }} />
+          : value
+        }
       </td>
     </tr>
   )
