@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { StrictMode } from 'react'
 import type { AkeneoCredentials } from '../types/akeneo'
+import { credentials as buildTimeCredentials } from '../background/credentials'
 
 // Design tokens from DESIGN.md
 const PRIMARY       = '#4386F0'
@@ -67,7 +68,7 @@ function OptionsApp() {
 
   useEffect(() => {
     chrome.storage.local.get('credentials', ({ credentials }) => {
-      if (credentials) setForm(credentials as AkeneoCredentials)
+      setForm((credentials as AkeneoCredentials | undefined) ?? buildTimeCredentials)
     })
   }, [])
 

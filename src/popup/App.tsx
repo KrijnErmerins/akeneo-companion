@@ -502,14 +502,32 @@ export default function App() {
         background: CANVAS,
       }}>
         <span>v{chrome.runtime.getManifest().version}</span>
-        <a
-          href={PIMPORT_DOWNLOAD_URL}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: PRIMARY, textDecoration: 'none', cursor: 'pointer', fontWeight: 500 }}
-        >
-          Download
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={() => chrome.runtime.openOptionsPage()}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: MUTED,
+              fontSize: 11,
+              fontFamily: FONT_BODY,
+              fontWeight: 500,
+              textDecoration: 'none',
+            }}
+          >
+            Instellingen
+          </button>
+          <a
+            href={PIMPORT_DOWNLOAD_URL}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: PRIMARY, textDecoration: 'none', cursor: 'pointer', fontWeight: 500 }}
+          >
+            Download
+          </a>
+        </div>
       </div>
     </div>
   )

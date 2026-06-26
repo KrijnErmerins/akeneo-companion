@@ -1,12 +1,20 @@
-import type { ExtensionMessage, ExtensionResponse, ProductLookupResult } from '../types/akeneo'
+import type { AkeneoCredentials, ExtensionMessage, ExtensionResponse, ProductLookupResult } from '../types/akeneo'
 import { lookupProduct } from './akeneo'
-import { credentials } from './credentials'
+import { credentials as buildTimeCredentials } from './credentials'
 import { checkForUpdate } from './update-checker'
 
 checkForUpdate()
 
 const productCache = new Map<string, { data: ProductLookupResult; expires: number }>()
 const CACHE_TTL_MS = 5 * 60 * 1000
+
+function loadCredentials(): Promise<AkeneoCredentials> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get('credentials', ({ credentials }) => {
+      resolve((credentials as AkeneoCredentials | undefined) ?? buildTimeCredentials)
+    })
+  })
+}
 
 chrome.runtime.onMessage.addListener(
   (message: ExtensionMessage, _sender, sendResponse: (r: ExtensionResponse) => void) => {
@@ -22,7 +30,8 @@ chrome.runtime.onMessage.addListener(
       return false
     }
 
-    lookupProduct(message.sku!, credentials)
+    loadCredentials()
+      .then((creds) => lookupProduct(message.sku!, creds))
       .then((data) => {
         productCache.set(cacheKey, { data, expires: Date.now() + CACHE_TTL_MS })
         sendResponse({ success: true, data })
