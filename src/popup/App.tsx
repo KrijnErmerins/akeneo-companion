@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { ExtensionResponse, AttributeValue, ProductLookupResult } from '../types/akeneo'
+import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
 
 // Design tokens from DESIGN.md
@@ -97,8 +97,9 @@ function Chip({ children }: { children: string }) {
   )
 }
 
-function Row({ attr, value }: { attr: string; value: string }) {
+function Row({ attr, value, required }: { attr: string; value: string; required?: boolean }) {
   const missing = value === '—'
+  const dotColor = missing ? (required ? DANGER : HAIRLINE) : SUCCESS
   return (
     <tr style={{ borderBottom: `1px solid ${HAIRLINE}`, cursor: 'default' }}>
       <td style={{
@@ -120,7 +121,7 @@ function Row({ attr, value }: { attr: string; value: string }) {
           width: 6,
           height: 6,
           borderRadius: '50%',
-          background: !missing ? SUCCESS : HAIRLINE,
+          background: dotColor,
           marginRight: 6,
           verticalAlign: 'middle',
           flexShrink: 0,
@@ -131,7 +132,7 @@ function Row({ attr, value }: { attr: string; value: string }) {
         padding: '6px 0',
         fontSize: 13,
         fontFamily: FONT_BODY,
-        color: missing ? MUTED : BODY,
+        color: missing ? (required ? DANGER_TEXT : MUTED) : BODY,
         wordBreak: 'break-word',
         lineHeight: 1.5,
       }}>
@@ -201,6 +202,7 @@ export default function App() {
   const [sku, setSku] = useState<string | null>(null)
   const [locale, setLocale] = useState<string>('nl_NL')
   const [product, setProduct] = useState<ProductLookupResult | null>(null)
+  const [familyAttrs, setFamilyAttrs] = useState<FamilyAttribute[] | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
@@ -228,6 +230,16 @@ export default function App() {
       }
     })
   }, [])
+
+  useEffect(() => {
+    if (!product?.family) return
+    chrome.runtime.sendMessage(
+      { type: 'GET_FAMILY_ATTRIBUTES', familyCode: product.family },
+      (res: FamilyAttributesResponse) => {
+        if (res.success && res.data) setFamilyAttrs(res.data)
+      },
+    )
+  }, [product?.family])
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
@@ -343,6 +355,22 @@ export default function App() {
   }, [])
 
   const entries = product ? Object.entries(product.values) : []
+  const requiredSet = new Set(familyAttrs?.filter((a) => a.required).map((a) => a.code) ?? [])
+
+  const sortedEntries = familyAttrs
+    ? [...entries].sort(([a], [b]) => {
+        const aReq = requiredSet.has(a)
+        const bReq = requiredSet.has(b)
+        if (aReq && !bReq) return -1
+        if (!aReq && bReq) return 1
+        return 0
+      })
+    : entries
+
+  const reqEntries = entries.filter(([k]) => requiredSet.has(k))
+  const optEntries = entries.filter(([k]) => !requiredSet.has(k))
+  const reqFilled = reqEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
+  const optFilled = optEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
   const filledCount = entries.filter(([, v]) => resolveValue(v, locale) !== '—').length
 
   return (
@@ -471,7 +499,17 @@ export default function App() {
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
               <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: FONT_BODY }}>
-                {filledCount}/{entries.length} ingevuld
+                {familyAttrs ? (
+                  <>
+                    <span style={{ color: reqEntries.length > reqFilled ? DANGER : SUCCESS, fontWeight: 600 }}>
+                      {reqFilled}/{reqEntries.length} required
+                    </span>
+                    {' · '}
+                    {optFilled}/{optEntries.length} optional
+                  </>
+                ) : (
+                  `${filledCount}/${entries.length} ingevuld`
+                )}
               </span>
             </div>
 
@@ -479,9 +517,9 @@ export default function App() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
-                  {entries.map(([attr, vals]) => {
+                  {sortedEntries.map(([attr, vals]) => {
                     const value = resolveValue(vals, locale)
-                    return <Row key={attr} attr={attr} value={value} />
+                    return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
                   })}
                 </tbody>
               </table>

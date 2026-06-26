@@ -26,15 +26,27 @@ export interface ProductLookupResult {
   values: Record<string, AttributeValue[]>
 }
 
+export interface FamilyAttribute {
+  code: string
+  required: boolean
+}
+
 export interface ExtensionMessage {
-  type: 'GET_PRODUCT' | 'SKU_DETECTED'
+  type: 'GET_PRODUCT' | 'SKU_DETECTED' | 'GET_FAMILY_ATTRIBUTES'
   sku?: string
   locale?: string
+  familyCode?: string
 }
 
 export interface ExtensionResponse {
   success: boolean
   data?: ProductLookupResult
+  error?: string
+}
+
+export interface FamilyAttributesResponse {
+  success: boolean
+  data?: FamilyAttribute[]
   error?: string
 }
 
