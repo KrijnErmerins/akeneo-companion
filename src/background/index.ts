@@ -5,6 +5,16 @@ import { checkForUpdate } from './update-checker'
 
 checkForUpdate()
 
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install' && buildTimeCredentials.baseUrl) {
+    chrome.storage.local.get('credentials', ({ credentials }) => {
+      if (!credentials) {
+        chrome.storage.local.set({ credentials: buildTimeCredentials })
+      }
+    })
+  }
+})
+
 const productCache = new Map<string, { data: ProductLookupResult; expires: number }>()
 const CACHE_TTL_MS = 5 * 60 * 1000
 

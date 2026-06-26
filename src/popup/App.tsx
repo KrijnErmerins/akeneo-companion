@@ -203,6 +203,14 @@ export default function App() {
   const [product, setProduct] = useState<ProductLookupResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
+  const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
+
+  useEffect(() => {
+    chrome.storage.local.get('credentials', ({ credentials }) => {
+      const baseUrl = (credentials as { baseUrl?: string } | undefined)?.baseUrl
+      if (baseUrl) setAkeneoBaseUrl(baseUrl)
+    })
+  }, [])
 
   useEffect(() => {
     chrome.storage.local.get('updateState', (result) => {
@@ -399,9 +407,8 @@ export default function App() {
               <button
                 title="Bekijk in Akeneo"
                 onClick={() => {
-                  const baseUrl = import.meta.env.VITE_AKENEO_BASE_URL as string
                   const segment = product.type === 'product-model' ? 'product-model' : 'product'
-                  chrome.tabs.create({ url: `${baseUrl}/#/enrich/${segment}/${sku}` })
+                  chrome.tabs.create({ url: `${akeneoBaseUrl}/#/enrich/${segment}/${sku}` })
                 }}
                 style={{
                   display: 'flex',
