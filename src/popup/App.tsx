@@ -145,6 +145,8 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
   )
 }
 
+const LOCALES = ['nl_NL', 'nl_BE', 'de_DE'] as const
+
 const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
 
 function UpdateBanner({ version }: { version: string }) {
@@ -206,6 +208,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
+  const [localeHover, setLocaleHover] = useState(false)
 
   useEffect(() => {
     chrome.storage.local.get('credentials', ({ credentials }) => {
@@ -418,17 +421,29 @@ export default function App() {
         </div>
         {sku && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 1 }}>
-            <span style={{
-              fontSize: 11,
-              color: MUTED,
-              background: BODY_BG,
-              border: `1px solid ${HAIRLINE}`,
-              borderRadius: 8,
-              padding: '3px 8px',
-              fontFamily: FONT_BODY,
-              fontWeight: 500,
-              lineHeight: 1.4,
-            }}>
+            <span
+              title="Klik om locale te wisselen"
+              onClick={() => {
+                const idx = LOCALES.indexOf(locale as typeof LOCALES[number])
+                setLocale(LOCALES[(idx + 1) % LOCALES.length])
+              }}
+              onMouseEnter={() => setLocaleHover(true)}
+              onMouseLeave={() => setLocaleHover(false)}
+              style={{
+                fontSize: 11,
+                color: localeHover ? PRIMARY : MUTED,
+                background: localeHover ? PRIMARY_LIGHT : BODY_BG,
+                border: `1px solid ${localeHover ? PRIMARY_MID : HAIRLINE}`,
+                borderRadius: 8,
+                padding: '3px 8px',
+                fontFamily: FONT_BODY,
+                fontWeight: 500,
+                lineHeight: 1.4,
+                cursor: 'pointer',
+                userSelect: 'none',
+                transition: 'color 0.1s, background 0.1s, border-color 0.1s',
+              }}
+            >
               {locale}
             </span>
             {status === 'done' && product && (
