@@ -433,9 +433,18 @@ export default function App() {
             }}>
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: FONT_BODY }}>
-                {filledCount}/{allEntries.length} ingevuld
-              </span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
+                {fillByLocale.map(({ key, label, count }) => (
+                  <span key={key} style={{
+                    fontSize: 11,
+                    fontFamily: FONT_BODY,
+                    fontWeight: key === locale ? 700 : 400,
+                    color: key === locale ? INK : MUTED,
+                  }}>
+                    {label} {count}/{allEntries.length}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* Search */}
