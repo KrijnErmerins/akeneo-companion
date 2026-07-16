@@ -9,6 +9,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 // Also push SKU proactively on page load
 const sku = extractSku()
+// Store on window so the popup's injection-fallback executeScript can read it without duplicating extraction logic
+;(window as Window & { __lk_sku?: string | null }).__lk_sku = sku
 if (sku) {
   chrome.runtime.sendMessage({
     type: 'SKU_DETECTED',
