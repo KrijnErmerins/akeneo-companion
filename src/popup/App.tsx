@@ -330,6 +330,16 @@ export default function App() {
   const optFilled = optEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
   const filledCount = allEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
 
+  const FILL_LOCALES = [
+    { key: 'nl_NL', label: 'NL' },
+    { key: 'nl_BE', label: 'BE' },
+    { key: 'de_DE', label: 'DE' },
+  ]
+  const fillByLocale = FILL_LOCALES.map(({ key, label }) => ({
+    key, label,
+    count: allEntries.filter(([, v]) => resolveValue(v, key) !== '—').length,
+  }))
+
   return (
     <div style={{
       width: 480,
@@ -467,19 +477,18 @@ export default function App() {
             }}>
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: FONT_BODY }}>
-                {familyAttrs ? (
-                  <>
-                    <span style={{ color: reqEntries.length > reqFilled ? DANGER : SUCCESS, fontWeight: 600 }}>
-                      {reqFilled}/{reqEntries.length} required
-                    </span>
-                    {' · '}
-                    {optFilled}/{optEntries.length} optional
-                  </>
-                ) : (
-                  `${filledCount}/${allEntries.length} ingevuld`
-                )}
-              </span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
+                {fillByLocale.map(({ key, label, count }) => (
+                  <span key={key} style={{
+                    fontSize: 11,
+                    fontFamily: FONT_BODY,
+                    fontWeight: key === locale ? 700 : 400,
+                    color: key === locale ? INK : MUTED,
+                  }}>
+                    {label} {count}/{allEntries.length}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* Search */}
