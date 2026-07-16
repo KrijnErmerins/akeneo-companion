@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import DOMPurify from 'dompurify'
 import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
 
@@ -137,7 +138,7 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
         lineHeight: 1.5,
       }}>
         {missing ? '—' : isHtml(value)
-          ? <span dangerouslySetInnerHTML={{ __html: value }} />
+          ? <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }} />
           : value
         }
       </td>
