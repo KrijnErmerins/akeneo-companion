@@ -60,4 +60,5 @@ export const DOMAIN_LOCALE_MAP: Record<string, string> = {
 // Full-hostname overrides (staging/test domains that don't have a meaningful TLD)
 export const HOSTNAME_LOCALE_MAP: Record<string, string> = {
   'de.ledchampion.magento2.led.p.maxserv.io': 'de_DE',
+  'de.ledchampion.magento2.led.a.maxserv.dev': 'de_DE',
 }
