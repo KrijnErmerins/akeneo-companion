@@ -2,26 +2,12 @@ import { useEffect, useState } from 'react'
 import DOMPurify from 'dompurify'
 import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
-
-// Design tokens from DESIGN.md
-const PRIMARY       = '#4386F0'
-const PRIMARY_DARK  = '#2D6DE0'
-const PRIMARY_LIGHT = '#E8F0FE'
-const PRIMARY_MID   = '#C5D8FC'
-const CANVAS        = '#FFFFFF'
-const BODY_BG       = '#F8FAFC'
-const INK           = '#333333'
-const BODY          = '#4B5563'
-const MUTED         = '#6B7280'
-const HAIRLINE      = '#E2E8F0'
-const DANGER        = '#DC2626'
-const DANGER_BG     = '#FEF2F2'
-const DANGER_TEXT   = '#991B1B'
-const DANGER_BORDER = '#FECACA'
-const SUCCESS       = '#22C55E'
-
-const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-const FONT_BODY    = "'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+import {
+  PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
+  CANVAS, BODY_BG, INK, BODY, MUTED, HAIRLINE,
+  DANGER, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
+  SUCCESS, FONT_HEADING, FONT_BODY,
+} from '../tokens'
 
 const UNIT_MAP: Record<string, string> = {
   WATT: 'W', KILOWATT: 'kW',
@@ -209,6 +195,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
+  const [filterQuery, setFilterQuery] = useState<string>('')
   const [localeHover, setLocaleHover] = useState(false)
 
   useEffect(() => {
@@ -302,48 +289,10 @@ export default function App() {
             return
           }
           // Use a second executeScript instead of sendMessage to avoid the listener race condition.
-          // Extraction order mirrors extractSku() in sku-logic.ts — keep in sync.
+          // sku-detector.ts stores the extracted SKU on window.__lk_sku when it runs.
           chrome.scripting.executeScript({
             target: { tabId },
-            func: () => {
-              // 1. JSON-LD structured data
-              const scripts = document.querySelectorAll('script[type="application/ld+json"]')
-              for (const s of scripts) {
-                try {
-                  const d = JSON.parse(s.textContent ?? '') as unknown
-                  const items = Array.isArray(d) ? d : [d]
-                  for (const item of items as Record<string, unknown>[]) {
-                    if (item['@type'] === 'Product' && item.sku) return String(item.sku)
-                  }
-                } catch { /* malformed JSON-LD */ }
-              }
-              // 2. itemprop="sku"
-              const itemprop = document.querySelector('[itemprop="sku"]')
-              if (itemprop?.textContent?.trim()) return itemprop.textContent.trim()
-              // 3. Meta tag
-              const meta = document.querySelector<HTMLMetaElement>('meta[property="product:retailer_item_id"]')
-              if (meta?.content) return meta.content
-              // 4. Magento 2 Luma CSS
-              const skuEl = document.querySelector('.product.attribute.sku .value')
-              if (skuEl?.textContent?.trim()) return skuEl.textContent.trim()
-              // 5. data-product-sku / data-sku attributes
-              for (const attr of ['data-product-sku', 'data-sku']) {
-                const el = document.querySelector(`[${attr}]`)
-                const val = el?.getAttribute(attr)?.trim()
-                if (val) return val
-              }
-              // 6. Magento 2 x-magento-init / x-magento-config inline JSON
-              const mageScripts = document.querySelectorAll('script[type="text/x-magento-init"], script[type="text/x-magento-config"]')
-              for (const ms of mageScripts) {
-                const raw = ms.textContent ?? ''
-                const m = raw.match(/"(?:sku|productSku|product_sku)"\s*:\s*"([^"]+)"/)
-                if (m?.[1]) return m[1]
-              }
-              // 7. Broader CSS selector for custom themes
-              const broadSkuEl = document.querySelector('[class*="sku"] .value, [class*="sku"] [class*="value"]')
-              if (broadSkuEl?.textContent?.trim()) return broadSkuEl.textContent.trim()
-              return null
-            },
+            func: () => (window as Window & { __lk_sku?: string | null }).__lk_sku ?? null,
           }, (results) => {
             const retrySku = results?.[0]?.result as string | null
             if (retrySku) {
@@ -358,24 +307,28 @@ export default function App() {
     })
   }, [])
 
-  const entries = product ? Object.entries(product.values) : []
+  const allEntries = product ? Object.entries(product.values) : []
   const requiredSet = new Set(familyAttrs?.filter((a) => a.required).map((a) => a.code) ?? [])
 
+  const filteredEntries = filterQuery
+    ? allEntries.filter(([attr]) => prettifyAttr(attr).toLowerCase().includes(filterQuery.toLowerCase()))
+    : allEntries
+
   const sortedEntries = familyAttrs
-    ? [...entries].sort(([a], [b]) => {
+    ? [...filteredEntries].sort(([a], [b]) => {
         const aReq = requiredSet.has(a)
         const bReq = requiredSet.has(b)
         if (aReq && !bReq) return -1
         if (!aReq && bReq) return 1
         return 0
       })
-    : entries
+    : filteredEntries
 
-  const reqEntries = entries.filter(([k]) => requiredSet.has(k))
-  const optEntries = entries.filter(([k]) => !requiredSet.has(k))
+  const reqEntries = allEntries.filter(([k]) => requiredSet.has(k))
+  const optEntries = allEntries.filter(([k]) => !requiredSet.has(k))
   const reqFilled = reqEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
   const optFilled = optEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
-  const filledCount = entries.filter(([, v]) => resolveValue(v, locale) !== '—').length
+  const filledCount = allEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
 
   return (
     <div style={{
@@ -524,9 +477,67 @@ export default function App() {
                     {optFilled}/{optEntries.length} optional
                   </>
                 ) : (
-                  `${filledCount}/${entries.length} ingevuld`
+                  `${filledCount}/${allEntries.length} ingevuld`
                 )}
               </span>
+            </div>
+
+            {/* Search */}
+            <div style={{
+              padding: '8px 16px',
+              borderBottom: `1px solid ${HAIRLINE}`,
+              flexShrink: 0,
+              background: CANVAS,
+            }}>
+              <div style={{ position: 'relative' }}>
+                <svg
+                  width="13" height="13" viewBox="0 0 13 13" fill="none"
+                  style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: MUTED, pointerEvents: 'none' }}
+                >
+                  <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.3"/>
+                  <path d="M8.5 8.5L11 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Zoek attribuut…"
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    paddingLeft: 28,
+                    paddingRight: filterQuery ? 28 : 10,
+                    paddingTop: 6,
+                    paddingBottom: 6,
+                    fontSize: 12,
+                    fontFamily: FONT_BODY,
+                    color: INK,
+                    background: BODY_BG,
+                    border: `1px solid ${HAIRLINE}`,
+                    borderRadius: 8,
+                    outline: 'none',
+                  }}
+                />
+                {filterQuery && (
+                  <button
+                    onClick={() => setFilterQuery('')}
+                    style={{
+                      position: 'absolute',
+                      right: 7,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      color: MUTED,
+                      lineHeight: 0,
+                      fontSize: 14,
+                    }}
+                    title="Wis filter"
+                  >×</button>
+                )}
+              </div>
             </div>
 
             {/* Table */}
@@ -539,9 +550,9 @@ export default function App() {
                   })}
                 </tbody>
               </table>
-              {entries.length === 0 && (
+              {filteredEntries.length === 0 && (
                 <p style={{ fontSize: 13, color: MUTED, padding: '20px 0', fontFamily: FONT_BODY }}>
-                  Geen attributen gevonden.
+                  {filterQuery ? `Geen resultaten voor "${filterQuery}".` : 'Geen attributen gevonden.'}
                 </p>
               )}
             </div>

@@ -3,26 +3,12 @@ import { createRoot } from 'react-dom/client'
 import { StrictMode } from 'react'
 import type { AkeneoCredentials } from '../types/akeneo'
 import { credentials as buildTimeCredentials } from '../background/credentials'
-
-// Design tokens from DESIGN.md
-const PRIMARY       = '#4386F0'
-const PRIMARY_DARK  = '#2D6DE0'
-const PRIMARY_LIGHT = '#E8F0FE'
-const CANVAS        = '#FFFFFF'
-const BODY_BG       = '#F8FAFC'
-const INK           = '#333333'
-const BODY          = '#4B5563'
-const MUTED         = '#6B7280'
-const HAIRLINE      = '#E2E8F0'
-const BORDER_STRONG = '#D1D5DB'
-const SUCCESS       = '#22C55E'
-const SUCCESS_TEXT  = '#166534'
-const DANGER_BG     = '#FEF2F2'
-const DANGER_TEXT   = '#991B1B'
-const DANGER_BORDER = '#FECACA'
-
-const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-const FONT_BODY    = "'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+import {
+  PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT,
+  CANVAS, BODY_BG, INK, BODY, MUTED, HAIRLINE, BORDER_STRONG,
+  SUCCESS, SUCCESS_TEXT, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
+  FONT_HEADING, FONT_BODY,
+} from '../tokens'
 
 const FIELDS: { key: keyof AkeneoCredentials; label: string; placeholder: string; type?: string }[] = [
   { key: 'baseUrl', label: 'Akeneo URL', placeholder: 'https://ledkoning.cloud.akeneo.com' },

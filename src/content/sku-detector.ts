@@ -11,6 +11,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 })
 
+// Store on window so the popup's injection-fallback executeScript can read it without duplicating extraction logic
+;(window as Window & { __lk_sku?: string | null }).__lk_sku = currentSku
+
 // Push SKU proactively on page load
 if (currentSku) {
   chrome.runtime.sendMessage({ type: 'SKU_DETECTED', sku: currentSku, locale })
@@ -24,6 +27,7 @@ if (skuEl) {
     const newSku = skuEl.textContent?.trim() ?? null
     if (newSku && newSku !== currentSku) {
       currentSku = newSku
+      ;(window as Window & { __lk_sku?: string | null }).__lk_sku = newSku
       chrome.runtime.sendMessage({ type: 'SKU_DETECTED', sku: newSku, locale })
     }
   }).observe(skuEl, { childList: true, subtree: true, characterData: true })

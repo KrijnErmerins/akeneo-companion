@@ -1,0 +1,20 @@
+export const PRIMARY       = '#4386F0'
+export const PRIMARY_DARK  = '#2D6DE0'
+export const PRIMARY_LIGHT = '#E8F0FE'
+export const PRIMARY_MID   = '#C5D8FC'
+export const CANVAS        = '#FFFFFF'
+export const BODY_BG       = '#F8FAFC'
+export const INK           = '#333333'
+export const BODY          = '#4B5563'
+export const MUTED         = '#6B7280'
+export const HAIRLINE      = '#E2E8F0'
+export const BORDER_STRONG = '#D1D5DB'
+export const DANGER        = '#DC2626'
+export const DANGER_BG     = '#FEF2F2'
+export const DANGER_TEXT   = '#991B1B'
+export const DANGER_BORDER = '#FECACA'
+export const SUCCESS       = '#22C55E'
+export const SUCCESS_TEXT  = '#166534'
+
+export const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+export const FONT_BODY    = "'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
