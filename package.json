@@ -18,6 +18,8 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0",
     "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/chrome": "^0.1.43",
     "@types/dompurify": "^3.0.5",
     "@types/jsdom": "^28.0.3",
