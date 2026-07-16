@@ -324,12 +324,6 @@ export default function App() {
       })
     : filteredEntries
 
-  const reqEntries = allEntries.filter(([k]) => requiredSet.has(k))
-  const optEntries = allEntries.filter(([k]) => !requiredSet.has(k))
-  const reqFilled = reqEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
-  const optFilled = optEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
-  const filledCount = allEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
-
   const FILL_LOCALES = [
     { key: 'nl_NL', label: 'NL' },
     { key: 'nl_BE', label: 'BE' },

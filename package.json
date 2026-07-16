@@ -1,7 +1,7 @@
 {
   "name": "akeneo-companion",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "dompurify": "^3.4.12",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0",
@@ -36,7 +36,7 @@
     "sharp": "^0.35.2",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
+    "vite": "^8.1.5",
     "vitest": "^4.1.9"
   }
 }

@@ -16,7 +16,8 @@ function stubTab(url: string) {
 
 // Helper: make chrome.tabs.sendMessage respond with a SKU (or nothing)
 function stubSku(sku: string | null) {
-  vi.mocked(chrome.tabs.sendMessage).mockImplementation((_id, _msg, cb) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(vi.mocked(chrome.tabs.sendMessage) as any).mockImplementation((_id: unknown, _msg: unknown, cb: ((r: unknown) => void) | undefined) => {
     cb?.(sku ? { sku } : null)
     return Promise.resolve()
   })
@@ -25,7 +26,7 @@ function stubSku(sku: string | null) {
 // Helper: make chrome.runtime.sendMessage handle both GET_PRODUCT and GET_FAMILY_ATTRIBUTES
 function stubProduct(product: ProductLookupResult) {
   vi.mocked(chrome.runtime.sendMessage).mockImplementation((msg, cb) => {
-    const message = msg as { type: string }
+    const message = msg as unknown as { type: string }
     if (message.type === 'GET_PRODUCT') {
       const response: ExtensionResponse = { success: true, data: product }
       ;(cb as (r: ExtensionResponse) => void)?.(response)
@@ -56,7 +57,7 @@ beforeEach(() => {
 describe('App — loading state', () => {
   it('renders loader text while awaiting chrome.tabs.query', () => {
     // tabs.query never calls back → stays in loading state
-    vi.mocked(chrome.tabs.query).mockReturnValue(new Promise(() => {}))
+    vi.mocked(chrome.tabs.query).mockImplementation(() => { /* never resolves */ })
 
     render(<App />)
 
