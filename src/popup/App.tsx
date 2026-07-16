@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import DOMPurify from 'dompurify'
-import type { ExtensionResponse, AttributeValue, ProductLookupResult } from '../types/akeneo'
+import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
 import {
   PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
@@ -84,8 +84,9 @@ function Chip({ children }: { children: string }) {
   )
 }
 
-function Row({ attr, value }: { attr: string; value: string }) {
+function Row({ attr, value, required }: { attr: string; value: string; required?: boolean }) {
   const missing = value === '—'
+  const dotColor = missing ? (required ? DANGER : HAIRLINE) : SUCCESS
   return (
     <tr style={{ borderBottom: `1px solid ${HAIRLINE}`, cursor: 'default' }}>
       <td style={{
@@ -107,7 +108,7 @@ function Row({ attr, value }: { attr: string; value: string }) {
           width: 6,
           height: 6,
           borderRadius: '50%',
-          background: !missing ? SUCCESS : HAIRLINE,
+          background: dotColor,
           marginRight: 6,
           verticalAlign: 'middle',
           flexShrink: 0,
@@ -118,7 +119,7 @@ function Row({ attr, value }: { attr: string; value: string }) {
         padding: '6px 0',
         fontSize: 13,
         fontFamily: FONT_BODY,
-        color: missing ? MUTED : BODY,
+        color: missing ? (required ? DANGER_TEXT : MUTED) : BODY,
         wordBreak: 'break-word',
         lineHeight: 1.5,
       }}>
@@ -130,6 +131,8 @@ function Row({ attr, value }: { attr: string; value: string }) {
     </tr>
   )
 }
+
+const LOCALES = ['nl_NL', 'nl_BE', 'de_DE'] as const
 
 const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
 
@@ -188,10 +191,12 @@ export default function App() {
   const [sku, setSku] = useState<string | null>(null)
   const [locale, setLocale] = useState<string>('nl_NL')
   const [product, setProduct] = useState<ProductLookupResult | null>(null)
+  const [familyAttrs, setFamilyAttrs] = useState<FamilyAttribute[] | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
   const [filterQuery, setFilterQuery] = useState<string>('')
+  const [localeHover, setLocaleHover] = useState(false)
 
   useEffect(() => {
     chrome.storage.local.get('credentials', ({ credentials }) => {
@@ -216,6 +221,16 @@ export default function App() {
       }
     })
   }, [])
+
+  useEffect(() => {
+    if (!product?.family) return
+    chrome.runtime.sendMessage(
+      { type: 'GET_FAMILY_ATTRIBUTES', familyCode: product.family },
+      (res: FamilyAttributesResponse) => {
+        if (res.success && res.data) setFamilyAttrs(res.data)
+      },
+    )
+  }, [product?.family])
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
@@ -293,20 +308,27 @@ export default function App() {
   }, [])
 
   const allEntries = product ? Object.entries(product.values) : []
+  const requiredSet = new Set(familyAttrs?.filter((a) => a.required).map((a) => a.code) ?? [])
 
-  const FILL_LOCALES = [
-    { key: 'nl_NL', label: 'NL' },
-    { key: 'nl_BE', label: 'BE' },
-    { key: 'de_DE', label: 'DE' },
-  ]
-  const fillByLocale = FILL_LOCALES.map(({ key, label }) => ({
-    key, label,
-    count: allEntries.filter(([, v]) => resolveValue(v, key) !== '—').length,
-  }))
-
-  const entries = filterQuery
+  const filteredEntries = filterQuery
     ? allEntries.filter(([attr]) => prettifyAttr(attr).toLowerCase().includes(filterQuery.toLowerCase()))
     : allEntries
+
+  const sortedEntries = familyAttrs
+    ? [...filteredEntries].sort(([a], [b]) => {
+        const aReq = requiredSet.has(a)
+        const bReq = requiredSet.has(b)
+        if (aReq && !bReq) return -1
+        if (!aReq && bReq) return 1
+        return 0
+      })
+    : filteredEntries
+
+  const reqEntries = allEntries.filter(([k]) => requiredSet.has(k))
+  const optEntries = allEntries.filter(([k]) => !requiredSet.has(k))
+  const reqFilled = reqEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
+  const optFilled = optEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
+  const filledCount = allEntries.filter(([, v]) => resolveValue(v, locale) !== '—').length
 
   return (
     <div style={{
@@ -353,17 +375,29 @@ export default function App() {
         </div>
         {sku && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 1 }}>
-            <span style={{
-              fontSize: 11,
-              color: MUTED,
-              background: BODY_BG,
-              border: `1px solid ${HAIRLINE}`,
-              borderRadius: 8,
-              padding: '3px 8px',
-              fontFamily: FONT_BODY,
-              fontWeight: 500,
-              lineHeight: 1.4,
-            }}>
+            <span
+              title="Klik om locale te wisselen"
+              onClick={() => {
+                const idx = LOCALES.indexOf(locale as typeof LOCALES[number])
+                setLocale(LOCALES[(idx + 1) % LOCALES.length])
+              }}
+              onMouseEnter={() => setLocaleHover(true)}
+              onMouseLeave={() => setLocaleHover(false)}
+              style={{
+                fontSize: 11,
+                color: localeHover ? PRIMARY : MUTED,
+                background: localeHover ? PRIMARY_LIGHT : BODY_BG,
+                border: `1px solid ${localeHover ? PRIMARY_MID : HAIRLINE}`,
+                borderRadius: 8,
+                padding: '3px 8px',
+                fontFamily: FONT_BODY,
+                fontWeight: 500,
+                lineHeight: 1.4,
+                cursor: 'pointer',
+                userSelect: 'none',
+                transition: 'color 0.1s, background 0.1s, border-color 0.1s',
+              }}
+            >
               {locale}
             </span>
             {status === 'done' && product && (
@@ -434,7 +468,17 @@ export default function App() {
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
               <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: FONT_BODY }}>
-                {filledCount}/{allEntries.length} ingevuld
+                {familyAttrs ? (
+                  <>
+                    <span style={{ color: reqEntries.length > reqFilled ? DANGER : SUCCESS, fontWeight: 600 }}>
+                      {reqFilled}/{reqEntries.length} required
+                    </span>
+                    {' · '}
+                    {optFilled}/{optEntries.length} optional
+                  </>
+                ) : (
+                  `${filledCount}/${allEntries.length} ingevuld`
+                )}
               </span>
             </div>
 
@@ -500,13 +544,13 @@ export default function App() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
-                  {entries.map(([attr, vals]) => {
+                  {sortedEntries.map(([attr, vals]) => {
                     const value = resolveValue(vals, locale)
-                    return <Row key={attr} attr={attr} value={value} />
+                    return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
                   })}
                 </tbody>
               </table>
-              {entries.length === 0 && (
+              {filteredEntries.length === 0 && (
                 <p style={{ fontSize: 13, color: MUTED, padding: '20px 0', fontFamily: FONT_BODY }}>
                   {filterQuery ? `Geen resultaten voor "${filterQuery}".` : 'Geen attributen gevonden.'}
                 </p>
