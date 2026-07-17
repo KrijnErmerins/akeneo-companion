@@ -510,7 +510,7 @@ export default function App() {
               alignItems: 'center',
               gap: 6,
               flexShrink: 0,
-              background: BODY_BG,
+              background: 'transparent',
             }}>
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
