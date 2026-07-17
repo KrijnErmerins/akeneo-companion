@@ -67,7 +67,7 @@ function Chip({ children }: { children: string }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '2px 8px',
+      padding: '4px 10px',
       background: PRIMARY_LIGHT,
       border: `1px solid ${PRIMARY_MID}`,
       borderRadius: 999,
