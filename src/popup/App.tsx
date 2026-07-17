@@ -136,29 +136,71 @@ const LOCALES = ['nl_NL', 'nl_BE', 'de_DE'] as const
 
 const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
 
+const UPDATE_STEPS = [
+  'Klik op "Download" hieronder om de ZIP te downloaden.',
+  'Pak het ZIP-bestand uit naar een vaste map (bijv. C:\\Extensions\\akeneo-companion).',
+  'Ga naar chrome://extensions in een nieuw tabblad.',
+  'Klik op het ververs-icoon (↺) bij Akeneo Companion — klaar!',
+]
+
 function UpdateBanner({ version }: { version: string }) {
+  const [expanded, setExpanded] = useState(false)
   return (
     <div style={{
-      padding: '8px 16px',
       borderBottom: `1px solid ${HAIRLINE}`,
       background: PRIMARY_LIGHT,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      fontSize: 12,
-      fontFamily: FONT_BODY,
-      color: PRIMARY,
       flexShrink: 0,
     }}>
-      <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
-      <a
-        href={PIMPORT_DOWNLOAD_URL}
-        target="_blank"
-        rel="noreferrer"
-        style={{ color: PRIMARY_DARK, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', marginLeft: 'auto' }}
-      >
-        Download
-      </a>
+      <div style={{
+        padding: '8px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 12,
+        fontFamily: FONT_BODY,
+        color: PRIMARY,
+      }}>
+        <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          title={expanded ? 'Verberg instructies' : 'Toon update-instructies'}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '0 4px',
+            cursor: 'pointer',
+            color: PRIMARY,
+            fontSize: 11,
+            fontFamily: FONT_BODY,
+            fontWeight: 500,
+            textDecoration: 'underline',
+          }}
+        >
+          {expanded ? 'Verberg' : 'Hoe updaten?'}
+        </button>
+        <a
+          href={PIMPORT_DOWNLOAD_URL}
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: PRIMARY_DARK, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', marginLeft: 'auto' }}
+        >
+          Download
+        </a>
+      </div>
+      {expanded && (
+        <div style={{
+          padding: '0 16px 10px',
+          fontSize: 12,
+          fontFamily: FONT_BODY,
+          color: PRIMARY,
+        }}>
+          <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+            {UPDATE_STEPS.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   )
 }
