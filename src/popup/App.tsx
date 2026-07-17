@@ -4,7 +4,7 @@ import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttribut
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
 import {
   PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
-  CANVAS, BODY_BG, INK, BODY, MUTED, HAIRLINE,
+  CANVAS, BODY_BG, INK, MUTED, HAIRLINE,
   DANGER, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
   SUCCESS, FONT_HEADING, FONT_BODY,
 } from '../tokens'
@@ -88,19 +88,19 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
   const missing = value === '—'
   const dotColor = missing ? (required ? DANGER : HAIRLINE) : SUCCESS
   return (
-    <div style={{ borderBottom: `1px solid ${HAIRLINE}`, padding: '7px 0', cursor: 'default' }}>
+    <div style={{ borderBottom: `1px solid ${HAIRLINE}`, padding: '9px 0', cursor: 'default' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
         color: MUTED,
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: 600,
         fontFamily: FONT_BODY,
-        letterSpacing: '0.06em',
+        letterSpacing: '0.07em',
         textTransform: 'uppercase',
         userSelect: 'none',
         lineHeight: 1.4,
-        marginBottom: 3,
+        marginBottom: 5,
       }}>
         <span style={{
           display: 'inline-block',
@@ -114,9 +114,10 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
         {prettifyAttr(attr)}
       </div>
       <div style={{
-        fontSize: 13,
+        fontSize: 14,
         fontFamily: FONT_BODY,
-        color: missing ? (required ? DANGER_TEXT : MUTED) : BODY,
+        fontWeight: missing ? 400 : 500,
+        color: missing ? (required ? DANGER_TEXT : MUTED) : INK,
         wordBreak: 'break-word',
         lineHeight: 1.5,
         paddingLeft: 12,
