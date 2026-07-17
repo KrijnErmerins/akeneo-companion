@@ -76,6 +76,14 @@ Transform tasks into verifiable goals before starting. For multi-step tasks, sta
 2. [Step] → verify: [check]
 ```
 
+## Git Workflow
+
+This project uses **direct push to `main`** — no feature branches, no PRs, no `develop` branch.
+
+- Commit directly on `main` and push with `git push origin main`.
+- Always include `Co-Authored-By: Paperclip <noreply@paperclip.ing>` at the end of each commit message.
+- This overrides the general CTO git-workflow instructions (feature branches + PRs) which apply to pimport, not this repo.
+
 ## Key Constraints
 
 - **Manifest V3** — no persistent background pages; the service worker can be killed. Token cache in `auth.ts` is module-level and survives within a session but not across browser restarts.
