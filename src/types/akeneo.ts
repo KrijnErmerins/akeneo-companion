@@ -22,6 +22,7 @@ export type ProductType = 'product' | 'product-model'
 export interface ProductLookupResult {
   type: ProductType
   identifier: string
+  uuid?: string
   family: string | null
   values: Record<string, AttributeValue[]>
 }

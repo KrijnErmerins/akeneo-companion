@@ -409,7 +409,8 @@ export default function App() {
                 title="Bekijk in Akeneo"
                 onClick={() => {
                   const segment = product.type === 'product-model' ? 'product-model' : 'product'
-                  chrome.tabs.create({ url: `${akeneoBaseUrl}/#/enrich/${segment}/${sku}` })
+                  const identifier = product.type === 'product-model' ? sku : (product.uuid ?? sku)
+                  chrome.tabs.create({ url: `${akeneoBaseUrl}/#/enrich/${segment}/${identifier}` })
                 }}
                 style={{
                   display: 'flex',

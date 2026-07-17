@@ -25,6 +25,7 @@ export async function lookupProduct(
     return {
       type: 'product',
       identifier: product.identifier,
+      uuid: product.uuid,
       family: product.family ?? null,
       values: product.values ?? {},
     }
