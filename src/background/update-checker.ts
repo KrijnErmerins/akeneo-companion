@@ -1,5 +1,5 @@
 const GITHUB_REPO = 'KrijnErmerins/akeneo-companion'
-const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000 // 1 day
+const CHECK_INTERVAL_MS = 60 * 60 * 1000 // 1 hour
 
 interface UpdateState {
   latestVersion: string
