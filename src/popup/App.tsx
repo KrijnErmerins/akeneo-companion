@@ -487,7 +487,7 @@ export default function App() {
         {status === 'error' && (
           <div style={{
             margin: 16,
-            padding: '12px 14px',
+            padding: '14px 16px',
             border: `1px solid ${DANGER_BORDER}`,
             borderRadius: 12,
             background: DANGER_BG,
