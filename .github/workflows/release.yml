@@ -49,10 +49,15 @@ jobs:
 
       - name: Install Google Chrome
         run: |
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          if command -v google-chrome-stable &>/dev/null || command -v google-chrome &>/dev/null; then
+            echo "Chrome already installed: $(google-chrome --version 2>/dev/null || google-chrome-stable --version)"
+          else
+            wget -q -O /tmp/google-chrome-signing.pub https://dl.google.com/linux/linux_signing_key.pub
+            sudo gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+            sudo apt-get update
+            sudo apt-get install -y google-chrome-stable
+          fi
 
       - name: Write PEM key
         run: echo "${{ secrets.CRX_KEY_PEM }}" > key.pem
