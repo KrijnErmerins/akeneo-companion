@@ -88,20 +88,19 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
   const missing = value === '—'
   const dotColor = missing ? (required ? DANGER : HAIRLINE) : SUCCESS
   return (
-    <tr style={{ borderBottom: `1px solid ${HAIRLINE}`, cursor: 'default' }}>
-      <td style={{
-        padding: '6px 12px 6px 0',
+    <div style={{ borderBottom: `1px solid ${HAIRLINE}`, padding: '7px 0', cursor: 'default' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
         color: MUTED,
         fontSize: 11,
         fontWeight: 600,
         fontFamily: FONT_BODY,
         letterSpacing: '0.06em',
         textTransform: 'uppercase',
-        whiteSpace: 'nowrap',
-        verticalAlign: 'top',
         userSelect: 'none',
-        width: '38%',
         lineHeight: 1.4,
+        marginBottom: 3,
       }}>
         <span style={{
           display: 'inline-block',
@@ -110,25 +109,24 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
           borderRadius: '50%',
           background: dotColor,
           marginRight: 6,
-          verticalAlign: 'middle',
           flexShrink: 0,
         }} />
         {prettifyAttr(attr)}
-      </td>
-      <td style={{
-        padding: '6px 0',
+      </div>
+      <div style={{
         fontSize: 13,
         fontFamily: FONT_BODY,
         color: missing ? (required ? DANGER_TEXT : MUTED) : BODY,
         wordBreak: 'break-word',
         lineHeight: 1.5,
+        paddingLeft: 12,
       }}>
         {missing ? '—' : isHtml(value)
           ? <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }} />
           : value
         }
-      </td>
-    </tr>
+      </div>
+    </div>
   )
 }
 
@@ -612,14 +610,12 @@ export default function App() {
 
             {/* Table */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <tbody>
-                  {sortedEntries.map(([attr, vals]) => {
-                    const value = resolveValue(vals, locale)
-                    return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
-                  })}
-                </tbody>
-              </table>
+              <div>
+                {sortedEntries.map(([attr, vals]) => {
+                  const value = resolveValue(vals, locale)
+                  return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
+                })}
+              </div>
               {filteredEntries.length === 0 && (
                 <p style={{ fontSize: 13, color: MUTED, padding: '20px 0', fontFamily: FONT_BODY }}>
                   {filterQuery ? `Geen resultaten voor "${filterQuery}".` : 'Geen attributen gevonden.'}
