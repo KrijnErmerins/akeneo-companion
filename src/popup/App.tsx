@@ -67,7 +67,7 @@ function Chip({ children }: { children: string }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '2px 8px',
+      padding: '4px 10px',
       background: PRIMARY_LIGHT,
       border: `1px solid ${PRIMARY_MID}`,
       borderRadius: 999,
@@ -136,29 +136,85 @@ const LOCALES = ['nl_NL', 'nl_BE', 'de_DE'] as const
 
 const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
 
+const UPDATE_STEPS = [
+  'Klik op "Download" hieronder om de ZIP te downloaden.',
+  'Pak het ZIP-bestand uit naar een vaste map (bijv. C:\\Extensions\\akeneo-companion).',
+  'Ga naar chrome://extensions in een nieuw tabblad.',
+  'Klik op het ververs-icoon (↺) bij Akeneo Companion — klaar!',
+]
+
 function UpdateBanner({ version }: { version: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [expandHover, setExpandHover] = useState(false)
+  const [downloadHover, setDownloadHover] = useState(false)
   return (
     <div style={{
-      padding: '8px 16px',
       borderBottom: `1px solid ${HAIRLINE}`,
       background: PRIMARY_LIGHT,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      fontSize: 12,
-      fontFamily: FONT_BODY,
-      color: PRIMARY,
       flexShrink: 0,
     }}>
-      <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
-      <a
-        href={PIMPORT_DOWNLOAD_URL}
-        target="_blank"
-        rel="noreferrer"
-        style={{ color: PRIMARY_DARK, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', marginLeft: 'auto' }}
-      >
-        Download
-      </a>
+      <div style={{
+        padding: '8px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 12,
+        fontFamily: FONT_BODY,
+        color: PRIMARY,
+      }}>
+        <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          onMouseEnter={() => setExpandHover(true)}
+          onMouseLeave={() => setExpandHover(false)}
+          title={expanded ? 'Verberg instructies' : 'Toon update-instructies'}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '0 4px',
+            cursor: 'pointer',
+            color: expandHover ? PRIMARY_DARK : PRIMARY,
+            fontSize: 11,
+            fontFamily: FONT_BODY,
+            fontWeight: 500,
+            textDecoration: 'underline',
+            transition: 'color 0.15s',
+          }}
+        >
+          {expanded ? 'Verberg' : 'Hoe updaten?'}
+        </button>
+        <a
+          href={PIMPORT_DOWNLOAD_URL}
+          target="_blank"
+          rel="noreferrer"
+          onMouseEnter={() => setDownloadHover(true)}
+          onMouseLeave={() => setDownloadHover(false)}
+          style={{
+            color: downloadHover ? PRIMARY : PRIMARY_DARK,
+            fontWeight: 700,
+            textDecoration: 'underline',
+            cursor: 'pointer',
+            marginLeft: 'auto',
+            transition: 'color 0.15s',
+          }}
+        >
+          Download
+        </a>
+      </div>
+      {expanded && (
+        <div style={{
+          padding: '0 16px 10px',
+          fontSize: 12,
+          fontFamily: FONT_BODY,
+          color: PRIMARY,
+        }}>
+          <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+            {UPDATE_STEPS.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   )
 }
@@ -197,6 +253,10 @@ export default function App() {
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
   const [filterQuery, setFilterQuery] = useState<string>('')
   const [localeHover, setLocaleHover] = useState(false)
+  const [akeneoHover, setAkeneoHover] = useState(false)
+  const [clearHover, setClearHover] = useState(false)
+  const [settingsHover, setSettingsHover] = useState(false)
+  const [footerDownloadHover, setFooterDownloadHover] = useState(false)
 
   useEffect(() => {
     chrome.storage.local.get('credentials', ({ credentials }) => {
@@ -412,17 +472,20 @@ export default function App() {
                   const identifier = product.type === 'product-model' ? sku : (product.uuid ?? sku)
                   chrome.tabs.create({ url: `${akeneoBaseUrl}/#/enrich/${segment}/${identifier}` })
                 }}
+                onMouseEnter={() => setAkeneoHover(true)}
+                onMouseLeave={() => setAkeneoHover(false)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'none',
+                  background: akeneoHover ? PRIMARY_LIGHT : 'none',
                   border: 'none',
                   padding: 2,
                   cursor: 'pointer',
-                  color: PRIMARY,
+                  color: akeneoHover ? PRIMARY_DARK : PRIMARY,
                   borderRadius: 4,
                   lineHeight: 0,
+                  transition: 'color 0.15s, background 0.15s',
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -445,7 +508,7 @@ export default function App() {
         {status === 'error' && (
           <div style={{
             margin: 16,
-            padding: '12px 14px',
+            padding: '14px 16px',
             border: `1px solid ${DANGER_BORDER}`,
             borderRadius: 12,
             background: DANGER_BG,
@@ -468,7 +531,7 @@ export default function App() {
               alignItems: 'center',
               gap: 6,
               flexShrink: 0,
-              background: BODY_BG,
+              background: 'transparent',
             }}>
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
@@ -525,6 +588,8 @@ export default function App() {
                 {filterQuery && (
                   <button
                     onClick={() => setFilterQuery('')}
+                    onMouseEnter={() => setClearHover(true)}
+                    onMouseLeave={() => setClearHover(false)}
                     style={{
                       position: 'absolute',
                       right: 7,
@@ -534,9 +599,10 @@ export default function App() {
                       border: 'none',
                       padding: 0,
                       cursor: 'pointer',
-                      color: MUTED,
+                      color: clearHover ? INK : MUTED,
                       lineHeight: 0,
                       fontSize: 14,
+                      transition: 'color 0.15s',
                     }}
                     title="Wis filter"
                   >×</button>
@@ -581,16 +647,19 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
             onClick={() => chrome.runtime.openOptionsPage()}
+            onMouseEnter={() => setSettingsHover(true)}
+            onMouseLeave={() => setSettingsHover(false)}
             style={{
               background: 'none',
               border: 'none',
               padding: 0,
               cursor: 'pointer',
-              color: MUTED,
+              color: settingsHover ? INK : MUTED,
               fontSize: 11,
               fontFamily: FONT_BODY,
               fontWeight: 500,
               textDecoration: 'none',
+              transition: 'color 0.15s',
             }}
           >
             Instellingen
@@ -599,7 +668,15 @@ export default function App() {
             href={PIMPORT_DOWNLOAD_URL}
             target="_blank"
             rel="noreferrer"
-            style={{ color: PRIMARY, textDecoration: 'none', cursor: 'pointer', fontWeight: 500 }}
+            onMouseEnter={() => setFooterDownloadHover(true)}
+            onMouseLeave={() => setFooterDownloadHover(false)}
+            style={{
+              color: footerDownloadHover ? PRIMARY_DARK : PRIMARY,
+              textDecoration: 'none',
+              cursor: 'pointer',
+              fontWeight: 500,
+              transition: 'color 0.15s',
+            }}
           >
             Download
           </a>
