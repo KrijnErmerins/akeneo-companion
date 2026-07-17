@@ -24,15 +24,17 @@ jobs:
       - name: Set version from tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          npm version --no-git-tag-version "$VERSION"
+          npm version --no-git-tag-version --allow-same-version "$VERSION"
 
       - name: Commit version bump to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "chore: bump package.json version to ${GITHUB_REF_NAME#v}"
-          git push origin HEAD:main
+          git add package.json package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: bump package.json version to ${GITHUB_REF_NAME#v}"
+            git push origin HEAD:main
+          fi
 
       - run: npm run build
         env:
@@ -45,10 +47,42 @@ jobs:
       - name: Zip extension
         run: cd dist && zip -r ../akeneo-companion.zip . && cd ..
 
+      - name: Install Google Chrome
+        run: |
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Write PEM key
+        run: echo "${{ secrets.CRX_KEY_PEM }}" > key.pem
+
+      - name: Pack extension as CRX
+        run: |
+          google-chrome --pack-extension=dist --pack-extension-key=key.pem
+          mv dist.crx akeneo-companion.crx
+          rm key.pem
+
+      - name: Generate update.xml
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TAG="${GITHUB_REF_NAME}"
+          cat > update.xml <<EOF
+          <?xml version='1.0' encoding='UTF-8'?>
+          <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
+            <app appid='migofmlkogajdnkkclldmgajanlamnmm'>
+              <updatecheck codebase='https://github.com/KrijnErmerins/akeneo-companion/releases/download/${TAG}/akeneo-companion.crx' version='${VERSION}' />
+            </app>
+          </gupdate>
+          EOF
+
       - uses: actions/upload-artifact@v4
         with:
           name: extension
-          path: akeneo-companion.zip
+          path: |
+            akeneo-companion.zip
+            akeneo-companion.crx
+            update.xml
 
   release:
     needs: build
@@ -60,5 +94,8 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: akeneo-companion.zip
+          files: |
+            akeneo-companion.zip
+            akeneo-companion.crx
+            update.xml
           generate_release_notes: true

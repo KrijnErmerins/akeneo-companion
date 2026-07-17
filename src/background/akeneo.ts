@@ -1,4 +1,4 @@
-import type { AkeneoCredentials, ProductLookupResult } from '../types/akeneo'
+import type { AkeneoCredentials, FamilyAttribute, ProductLookupResult } from '../types/akeneo'
 import { getToken } from './auth'
 
 async function apiFetch(baseUrl: string, path: string, token: string) {
@@ -25,6 +25,7 @@ export async function lookupProduct(
     return {
       type: 'product',
       identifier: product.identifier,
+      uuid: product.uuid,
       family: product.family ?? null,
       values: product.values ?? {},
     }
@@ -52,4 +53,24 @@ export async function lookupProduct(
   }
 
   throw new Error(`SKU "${sku}" not found in Akeneo (tried product + product-model)`)
+}
+
+export async function getFamilyAttributes(
+  familyCode: string,
+  credentials: AkeneoCredentials,
+): Promise<FamilyAttribute[]> {
+  const token = await getToken(credentials)
+  const res = await apiFetch(
+    credentials.baseUrl,
+    `/api/rest/v1/families/${encodeURIComponent(familyCode)}`,
+    token,
+  )
+  if (!res.ok) throw new Error(`Family fetch failed: ${res.status}`)
+  const data = await res.json() as {
+    attributes?: string[]
+    attribute_requirements?: Record<string, string[]>
+  }
+  const allAttributes = data.attributes ?? []
+  const requiredSet = new Set(Object.values(data.attribute_requirements ?? {}).flat())
+  return allAttributes.map((code) => ({ code, required: requiredSet.has(code) }))
 }

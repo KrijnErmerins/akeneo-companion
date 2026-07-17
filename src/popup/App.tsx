@@ -1,26 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { ExtensionResponse, AttributeValue, ProductLookupResult } from '../types/akeneo'
+import DOMPurify from 'dompurify'
+import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
-
-// Design tokens from DESIGN.md
-const PRIMARY       = '#4386F0'
-const PRIMARY_DARK  = '#2D6DE0'
-const PRIMARY_LIGHT = '#E8F0FE'
-const PRIMARY_MID   = '#C5D8FC'
-const CANVAS        = '#FFFFFF'
-const BODY_BG       = '#F8FAFC'
-const INK           = '#333333'
-const BODY          = '#4B5563'
-const MUTED         = '#6B7280'
-const HAIRLINE      = '#E2E8F0'
-const DANGER        = '#DC2626'
-const DANGER_BG     = '#FEF2F2'
-const DANGER_TEXT   = '#991B1B'
-const DANGER_BORDER = '#FECACA'
-const SUCCESS       = '#22C55E'
-
-const FONT_HEADING = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-const FONT_BODY    = "'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+import {
+  PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
+  CANVAS, BODY_BG, INK, BODY, MUTED, HAIRLINE,
+  DANGER, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
+  SUCCESS, FONT_HEADING, FONT_BODY,
+} from '../tokens'
 
 const UNIT_MAP: Record<string, string> = {
   WATT: 'W', KILOWATT: 'kW',
@@ -80,7 +67,7 @@ function Chip({ children }: { children: string }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '2px 8px',
+      padding: '4px 10px',
       background: PRIMARY_LIGHT,
       border: `1px solid ${PRIMARY_MID}`,
       borderRadius: 999,
@@ -97,8 +84,9 @@ function Chip({ children }: { children: string }) {
   )
 }
 
-function Row({ attr, value }: { attr: string; value: string }) {
+function Row({ attr, value, required }: { attr: string; value: string; required?: boolean }) {
   const missing = value === '—'
+  const dotColor = missing ? (required ? DANGER : HAIRLINE) : SUCCESS
   return (
     <tr style={{ borderBottom: `1px solid ${HAIRLINE}`, cursor: 'default' }}>
       <td style={{
@@ -120,7 +108,7 @@ function Row({ attr, value }: { attr: string; value: string }) {
           width: 6,
           height: 6,
           borderRadius: '50%',
-          background: !missing ? SUCCESS : HAIRLINE,
+          background: dotColor,
           marginRight: 6,
           verticalAlign: 'middle',
           flexShrink: 0,
@@ -131,12 +119,12 @@ function Row({ attr, value }: { attr: string; value: string }) {
         padding: '6px 0',
         fontSize: 13,
         fontFamily: FONT_BODY,
-        color: missing ? MUTED : BODY,
+        color: missing ? (required ? DANGER_TEXT : MUTED) : BODY,
         wordBreak: 'break-word',
         lineHeight: 1.5,
       }}>
         {missing ? '—' : isHtml(value)
-          ? <span dangerouslySetInnerHTML={{ __html: value }} />
+          ? <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }} />
           : value
         }
       </td>
@@ -144,31 +132,89 @@ function Row({ attr, value }: { attr: string; value: string }) {
   )
 }
 
+const LOCALES = ['nl_NL', 'nl_BE', 'de_DE'] as const
+
 const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
 
+const UPDATE_STEPS = [
+  'Klik op "Download" hieronder om de ZIP te downloaden.',
+  'Pak het ZIP-bestand uit naar een vaste map (bijv. C:\\Extensions\\akeneo-companion).',
+  'Ga naar chrome://extensions in een nieuw tabblad.',
+  'Klik op het ververs-icoon (↺) bij Akeneo Companion — klaar!',
+]
+
 function UpdateBanner({ version }: { version: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [expandHover, setExpandHover] = useState(false)
+  const [downloadHover, setDownloadHover] = useState(false)
   return (
     <div style={{
-      padding: '8px 16px',
       borderBottom: `1px solid ${HAIRLINE}`,
       background: PRIMARY_LIGHT,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      fontSize: 12,
-      fontFamily: FONT_BODY,
-      color: PRIMARY,
       flexShrink: 0,
     }}>
-      <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
-      <a
-        href={PIMPORT_DOWNLOAD_URL}
-        target="_blank"
-        rel="noreferrer"
-        style={{ color: PRIMARY_DARK, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', marginLeft: 'auto' }}
-      >
-        Download
-      </a>
+      <div style={{
+        padding: '8px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 12,
+        fontFamily: FONT_BODY,
+        color: PRIMARY,
+      }}>
+        <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          onMouseEnter={() => setExpandHover(true)}
+          onMouseLeave={() => setExpandHover(false)}
+          title={expanded ? 'Verberg instructies' : 'Toon update-instructies'}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: '0 4px',
+            cursor: 'pointer',
+            color: expandHover ? PRIMARY_DARK : PRIMARY,
+            fontSize: 11,
+            fontFamily: FONT_BODY,
+            fontWeight: 500,
+            textDecoration: 'underline',
+            transition: 'color 0.15s',
+          }}
+        >
+          {expanded ? 'Verberg' : 'Hoe updaten?'}
+        </button>
+        <a
+          href={PIMPORT_DOWNLOAD_URL}
+          target="_blank"
+          rel="noreferrer"
+          onMouseEnter={() => setDownloadHover(true)}
+          onMouseLeave={() => setDownloadHover(false)}
+          style={{
+            color: downloadHover ? PRIMARY : PRIMARY_DARK,
+            fontWeight: 700,
+            textDecoration: 'underline',
+            cursor: 'pointer',
+            marginLeft: 'auto',
+            transition: 'color 0.15s',
+          }}
+        >
+          Download
+        </a>
+      </div>
+      {expanded && (
+        <div style={{
+          padding: '0 16px 10px',
+          fontSize: 12,
+          fontFamily: FONT_BODY,
+          color: PRIMARY,
+        }}>
+          <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
+            {UPDATE_STEPS.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   )
 }
@@ -201,8 +247,23 @@ export default function App() {
   const [sku, setSku] = useState<string | null>(null)
   const [locale, setLocale] = useState<string>('nl_NL')
   const [product, setProduct] = useState<ProductLookupResult | null>(null)
+  const [familyAttrs, setFamilyAttrs] = useState<FamilyAttribute[] | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
+  const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
+  const [filterQuery, setFilterQuery] = useState<string>('')
+  const [localeHover, setLocaleHover] = useState(false)
+  const [akeneoHover, setAkeneoHover] = useState(false)
+  const [clearHover, setClearHover] = useState(false)
+  const [settingsHover, setSettingsHover] = useState(false)
+  const [footerDownloadHover, setFooterDownloadHover] = useState(false)
+
+  useEffect(() => {
+    chrome.storage.local.get('credentials', ({ credentials }) => {
+      const baseUrl = (credentials as { baseUrl?: string } | undefined)?.baseUrl
+      if (baseUrl) setAkeneoBaseUrl(baseUrl)
+    })
+  }, [])
 
   useEffect(() => {
     chrome.storage.local.get('updateState', (result) => {
@@ -220,6 +281,16 @@ export default function App() {
       }
     })
   }, [])
+
+  useEffect(() => {
+    if (!product?.family) return
+    chrome.runtime.sendMessage(
+      { type: 'GET_FAMILY_ATTRIBUTES', familyCode: product.family },
+      (res: FamilyAttributesResponse) => {
+        if (res.success && res.data) setFamilyAttrs(res.data)
+      },
+    )
+  }, [product?.family])
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
@@ -278,48 +349,10 @@ export default function App() {
             return
           }
           // Use a second executeScript instead of sendMessage to avoid the listener race condition.
-          // Extraction order mirrors extractSku() in sku-logic.ts — keep in sync.
+          // sku-detector.ts stores the extracted SKU on window.__lk_sku when it runs.
           chrome.scripting.executeScript({
             target: { tabId },
-            func: () => {
-              // 1. JSON-LD structured data
-              const scripts = document.querySelectorAll('script[type="application/ld+json"]')
-              for (const s of scripts) {
-                try {
-                  const d = JSON.parse(s.textContent ?? '') as unknown
-                  const items = Array.isArray(d) ? d : [d]
-                  for (const item of items as Record<string, unknown>[]) {
-                    if (item['@type'] === 'Product' && item.sku) return String(item.sku)
-                  }
-                } catch { /* malformed JSON-LD */ }
-              }
-              // 2. itemprop="sku"
-              const itemprop = document.querySelector('[itemprop="sku"]')
-              if (itemprop?.textContent?.trim()) return itemprop.textContent.trim()
-              // 3. Meta tag
-              const meta = document.querySelector<HTMLMetaElement>('meta[property="product:retailer_item_id"]')
-              if (meta?.content) return meta.content
-              // 4. Magento 2 Luma CSS
-              const skuEl = document.querySelector('.product.attribute.sku .value')
-              if (skuEl?.textContent?.trim()) return skuEl.textContent.trim()
-              // 5. data-product-sku / data-sku attributes
-              for (const attr of ['data-product-sku', 'data-sku']) {
-                const el = document.querySelector(`[${attr}]`)
-                const val = el?.getAttribute(attr)?.trim()
-                if (val) return val
-              }
-              // 6. Magento 2 x-magento-init / x-magento-config inline JSON
-              const mageScripts = document.querySelectorAll('script[type="text/x-magento-init"], script[type="text/x-magento-config"]')
-              for (const ms of mageScripts) {
-                const raw = ms.textContent ?? ''
-                const m = raw.match(/"(?:sku|productSku|product_sku)"\s*:\s*"([^"]+)"/)
-                if (m?.[1]) return m[1]
-              }
-              // 7. Broader CSS selector for custom themes
-              const broadSkuEl = document.querySelector('[class*="sku"] .value, [class*="sku"] [class*="value"]')
-              if (broadSkuEl?.textContent?.trim()) return broadSkuEl.textContent.trim()
-              return null
-            },
+            func: () => (window as Window & { __lk_sku?: string | null }).__lk_sku ?? null,
           }, (results) => {
             const retrySku = results?.[0]?.result as string | null
             if (retrySku) {
@@ -334,8 +367,32 @@ export default function App() {
     })
   }, [])
 
-  const entries = product ? Object.entries(product.values) : []
-  const filledCount = entries.filter(([, v]) => resolveValue(v, locale) !== '—').length
+  const allEntries = product ? Object.entries(product.values) : []
+  const requiredSet = new Set(familyAttrs?.filter((a) => a.required).map((a) => a.code) ?? [])
+
+  const filteredEntries = filterQuery
+    ? allEntries.filter(([attr]) => prettifyAttr(attr).toLowerCase().includes(filterQuery.toLowerCase()))
+    : allEntries
+
+  const sortedEntries = familyAttrs
+    ? [...filteredEntries].sort(([a], [b]) => {
+        const aReq = requiredSet.has(a)
+        const bReq = requiredSet.has(b)
+        if (aReq && !bReq) return -1
+        if (!aReq && bReq) return 1
+        return 0
+      })
+    : filteredEntries
+
+  const FILL_LOCALES = [
+    { key: 'nl_NL', label: 'NL' },
+    { key: 'nl_BE', label: 'BE' },
+    { key: 'de_DE', label: 'DE' },
+  ]
+  const fillByLocale = FILL_LOCALES.map(({ key, label }) => ({
+    key, label,
+    count: allEntries.filter(([, v]) => resolveValue(v, key) !== '—').length,
+  }))
 
   return (
     <div style={{
@@ -382,38 +439,53 @@ export default function App() {
         </div>
         {sku && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 1 }}>
-            <span style={{
-              fontSize: 11,
-              color: MUTED,
-              background: BODY_BG,
-              border: `1px solid ${HAIRLINE}`,
-              borderRadius: 8,
-              padding: '3px 8px',
-              fontFamily: FONT_BODY,
-              fontWeight: 500,
-              lineHeight: 1.4,
-            }}>
+            <span
+              title="Klik om locale te wisselen"
+              onClick={() => {
+                const idx = LOCALES.indexOf(locale as typeof LOCALES[number])
+                setLocale(LOCALES[(idx + 1) % LOCALES.length])
+              }}
+              onMouseEnter={() => setLocaleHover(true)}
+              onMouseLeave={() => setLocaleHover(false)}
+              style={{
+                fontSize: 11,
+                color: localeHover ? PRIMARY : MUTED,
+                background: localeHover ? PRIMARY_LIGHT : BODY_BG,
+                border: `1px solid ${localeHover ? PRIMARY_MID : HAIRLINE}`,
+                borderRadius: 8,
+                padding: '3px 8px',
+                fontFamily: FONT_BODY,
+                fontWeight: 500,
+                lineHeight: 1.4,
+                cursor: 'pointer',
+                userSelect: 'none',
+                transition: 'color 0.1s, background 0.1s, border-color 0.1s',
+              }}
+            >
               {locale}
             </span>
             {status === 'done' && product && (
               <button
                 title="Bekijk in Akeneo"
                 onClick={() => {
-                  const baseUrl = import.meta.env.VITE_AKENEO_BASE_URL as string
                   const segment = product.type === 'product-model' ? 'product-model' : 'product'
-                  chrome.tabs.create({ url: `${baseUrl}/#/enrich/${segment}/${sku}/attributes` })
+                  const identifier = product.type === 'product-model' ? sku : (product.uuid ?? sku)
+                  chrome.tabs.create({ url: `${akeneoBaseUrl}/#/enrich/${segment}/${identifier}` })
                 }}
+                onMouseEnter={() => setAkeneoHover(true)}
+                onMouseLeave={() => setAkeneoHover(false)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'none',
+                  background: akeneoHover ? PRIMARY_LIGHT : 'none',
                   border: 'none',
                   padding: 2,
                   cursor: 'pointer',
-                  color: PRIMARY,
+                  color: akeneoHover ? PRIMARY_DARK : PRIMARY,
                   borderRadius: 4,
                   lineHeight: 0,
+                  transition: 'color 0.15s, background 0.15s',
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -436,7 +508,7 @@ export default function App() {
         {status === 'error' && (
           <div style={{
             margin: 16,
-            padding: '12px 14px',
+            padding: '14px 16px',
             border: `1px solid ${DANGER_BORDER}`,
             borderRadius: 12,
             background: DANGER_BG,
@@ -459,28 +531,98 @@ export default function App() {
               alignItems: 'center',
               gap: 6,
               flexShrink: 0,
-              background: BODY_BG,
+              background: 'transparent',
             }}>
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: FONT_BODY }}>
-                {filledCount}/{entries.length} ingevuld
-              </span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
+                {fillByLocale.map(({ key, label, count }) => (
+                  <span key={key} style={{
+                    fontSize: 11,
+                    fontFamily: FONT_BODY,
+                    fontWeight: key === locale ? 700 : 400,
+                    color: key === locale ? INK : MUTED,
+                  }}>
+                    {label} {count}/{allEntries.length}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Search */}
+            <div style={{
+              padding: '8px 16px',
+              borderBottom: `1px solid ${HAIRLINE}`,
+              flexShrink: 0,
+              background: CANVAS,
+            }}>
+              <div style={{ position: 'relative' }}>
+                <svg
+                  width="13" height="13" viewBox="0 0 13 13" fill="none"
+                  style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: MUTED, pointerEvents: 'none' }}
+                >
+                  <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.3"/>
+                  <path d="M8.5 8.5L11 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Zoek attribuut…"
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    paddingLeft: 28,
+                    paddingRight: filterQuery ? 28 : 10,
+                    paddingTop: 6,
+                    paddingBottom: 6,
+                    fontSize: 12,
+                    fontFamily: FONT_BODY,
+                    color: INK,
+                    background: BODY_BG,
+                    border: `1px solid ${HAIRLINE}`,
+                    borderRadius: 8,
+                    outline: 'none',
+                  }}
+                />
+                {filterQuery && (
+                  <button
+                    onClick={() => setFilterQuery('')}
+                    onMouseEnter={() => setClearHover(true)}
+                    onMouseLeave={() => setClearHover(false)}
+                    style={{
+                      position: 'absolute',
+                      right: 7,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      color: clearHover ? INK : MUTED,
+                      lineHeight: 0,
+                      fontSize: 14,
+                      transition: 'color 0.15s',
+                    }}
+                    title="Wis filter"
+                  >×</button>
+                )}
+              </div>
             </div>
 
             {/* Table */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
-                  {entries.map(([attr, vals]) => {
+                  {sortedEntries.map(([attr, vals]) => {
                     const value = resolveValue(vals, locale)
-                    return <Row key={attr} attr={attr} value={value} />
+                    return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
                   })}
                 </tbody>
               </table>
-              {entries.length === 0 && (
+              {filteredEntries.length === 0 && (
                 <p style={{ fontSize: 13, color: MUTED, padding: '20px 0', fontFamily: FONT_BODY }}>
-                  Geen attributen gevonden.
+                  {filterQuery ? `Geen resultaten voor "${filterQuery}".` : 'Geen attributen gevonden.'}
                 </p>
               )}
             </div>
@@ -502,14 +644,43 @@ export default function App() {
         background: CANVAS,
       }}>
         <span>v{chrome.runtime.getManifest().version}</span>
-        <a
-          href={PIMPORT_DOWNLOAD_URL}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: PRIMARY, textDecoration: 'none', cursor: 'pointer', fontWeight: 500 }}
-        >
-          Download
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={() => chrome.runtime.openOptionsPage()}
+            onMouseEnter={() => setSettingsHover(true)}
+            onMouseLeave={() => setSettingsHover(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: settingsHover ? INK : MUTED,
+              fontSize: 11,
+              fontFamily: FONT_BODY,
+              fontWeight: 500,
+              textDecoration: 'none',
+              transition: 'color 0.15s',
+            }}
+          >
+            Instellingen
+          </button>
+          <a
+            href={PIMPORT_DOWNLOAD_URL}
+            target="_blank"
+            rel="noreferrer"
+            onMouseEnter={() => setFooterDownloadHover(true)}
+            onMouseLeave={() => setFooterDownloadHover(false)}
+            style={{
+              color: footerDownloadHover ? PRIMARY_DARK : PRIMARY,
+              textDecoration: 'none',
+              cursor: 'pointer',
+              fontWeight: 500,
+              transition: 'color 0.15s',
+            }}
+          >
+            Download
+          </a>
+        </div>
       </div>
     </div>
   )
