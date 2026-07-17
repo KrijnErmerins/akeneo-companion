@@ -6,6 +6,8 @@ export default defineManifest({
   manifest_version: 3,
   name: 'Akeneo Companion',
   version: packageJson.version,
+  key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAph/cNmXYZ601CBn1WKkiGcx7Q9/NTJYRvj6J7qY6o9GXhxgYrlkAimDrvMPE+noBkahCEhQK9Ys1grPOhQDMQxzfvuk9buRddgO0AGpmYtI09i4GvvCXl5nyP9X5SFClNcQZN7Q0ZiRVr842Wbd/A/ujZAlxM1XdYO4+9Rfv4CoHU+cBjCpYkYe0vdYOWeifOjOMtyna7+24LqsMUMbwdLM9kJrvaAhvfq15slQSPZAIeyJX6U/JTCPLSEhM/uYGR6JnVfhqFsDCPohcOJbOqqupeBTVSWEnGWwKAuvMVkf2JpGkqKVBe1f8hUE2I1dfKuffScDE91l9fNPbEx66MQIDAQAB',
+  update_url: 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/update.xml',
   description: 'Check Akeneo product completeness from any LedKoning PDP',
   icons: {
     '16': 'icons/icon16.png',
