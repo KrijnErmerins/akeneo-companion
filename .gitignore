@@ -27,3 +27,7 @@ dist-ssr
 .env
 key.pem
 
+# Build artifacts
+*.zip
+*.crx
+
