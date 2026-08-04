@@ -34,16 +34,24 @@ function formatObj(obj: Record<string, unknown>): string {
   return Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join(', ')
 }
 
-function formatValue(data: unknown): string {
+function formatValue(data: unknown, optionMap?: Map<string, Record<string, string>>, locale?: string): string {
   if (data === null || data === undefined || data === '') return '—'
   if (typeof data === 'boolean') return data ? 'Ja' : 'Nee'
   if (Array.isArray(data)) {
     if (data.length === 0) return '—'
     return data
-      .map((v) => (typeof v === 'object' && v !== null ? formatObj(v as Record<string, unknown>) : String(v)))
+      .map((v) => {
+        if (typeof v === 'string' && optionMap) {
+          return optionMap.get(v)?.[locale ?? ''] ?? v
+        }
+        return typeof v === 'object' && v !== null ? formatObj(v as Record<string, unknown>) : String(v)
+      })
       .join(', ')
   }
   if (typeof data === 'object') return formatObj(data as Record<string, unknown>)
+  if (typeof data === 'string' && optionMap) {
+    return optionMap.get(data)?.[locale ?? ''] ?? data
+  }
   return String(data)
 }
 
@@ -55,12 +63,12 @@ function prettifyAttr(key: string): string {
   return key.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
 }
 
-function resolveValue(values: AttributeValue[], locale: string): string {
+function resolveValue(values: AttributeValue[], locale: string, optionMap?: Map<string, Record<string, string>>): string {
   const match =
     values.find((v) => v.locale === locale) ??
     values.find((v) => v.locale === null) ??
     values[0]
-  return match ? formatValue(match.data) : '—'
+  return match ? formatValue(match.data, optionMap, locale) : '—'
 }
 
 function Chip({ children }: { children: string }) {
@@ -248,6 +256,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
+  const [optionLabels, setOptionLabels] = useState<Record<string, Map<string, Record<string, string>>>>({})
   const [filterQuery, setFilterQuery] = useState<string>('')
   const [akeneoHover, setAkeneoHover] = useState(false)
   const [clearHover, setClearHover] = useState(false)
@@ -284,6 +293,41 @@ export default function App() {
       { type: 'GET_FAMILY_ATTRIBUTES', familyCode: product.family },
       (res: FamilyAttributesResponse) => {
         if (res.success && res.data) setFamilyAttrs(res.data)
+      },
+    )
+  }, [product?.family])
+
+  useEffect(() => {
+    if (!product?.family) return
+    const SELECT_TYPES = new Set(['pim_catalog_simpleselect', 'pim_catalog_multiselect'])
+    chrome.runtime.sendMessage(
+      { type: 'GET_ATTRIBUTE_TYPES', familyCode: product.family },
+      (res: FamilyAttributesResponse) => {
+        if (!res.success || !res.data) return
+        const typeMap = res.data as unknown as Map<string, string>
+        const selectAttrs = Object.keys(product.values).filter((code) => SELECT_TYPES.has(typeMap.get(code) ?? ''))
+        if (selectAttrs.length === 0) return
+        Promise.all(
+          selectAttrs.map(
+            (code) =>
+              new Promise<[string, Map<string, Record<string, string>>]>((resolve) => {
+                chrome.runtime.sendMessage(
+                  { type: 'GET_ATTRIBUTE_OPTIONS', attributeCode: code },
+                  (optRes: FamilyAttributesResponse) => {
+                    if (optRes.success && optRes.data) {
+                      resolve([code, optRes.data as unknown as Map<string, Record<string, string>>])
+                    } else {
+                      resolve([code, new Map()])
+                    }
+                  },
+                )
+              }),
+          ),
+        ).then((entries) => {
+          const map: Record<string, Map<string, Record<string, string>>> = {}
+          for (const [code, opts] of entries) map[code] = opts
+          setOptionLabels(map)
+        })
       },
     )
   }, [product?.family])
@@ -624,7 +668,7 @@ export default function App() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
               <div>
                 {sortedEntries.map(([attr, vals]) => {
-                  const value = resolveValue(vals, locale)
+                  const value = resolveValue(vals, locale, optionLabels[attr])
                   return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
                 })}
               </div>
