@@ -131,8 +131,6 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
   )
 }
 
-const LOCALES = ['nl_NL', 'nl_BE', 'de_DE'] as const
-
 const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
 
 const UPDATE_STEPS = [
@@ -251,7 +249,6 @@ export default function App() {
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
   const [filterQuery, setFilterQuery] = useState<string>('')
-  const [localeHover, setLocaleHover] = useState(false)
   const [akeneoHover, setAkeneoHover] = useState(false)
   const [clearHover, setClearHover] = useState(false)
   const [settingsHover, setSettingsHover] = useState(false)
@@ -438,31 +435,45 @@ export default function App() {
         </div>
         {sku && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 1 }}>
-            <span
-              title="Klik om locale te wisselen"
-              onClick={() => {
-                const idx = LOCALES.indexOf(locale as typeof LOCALES[number])
-                setLocale(LOCALES[(idx + 1) % LOCALES.length])
-              }}
-              onMouseEnter={() => setLocaleHover(true)}
-              onMouseLeave={() => setLocaleHover(false)}
-              style={{
-                fontSize: 11,
-                color: localeHover ? PRIMARY : MUTED,
-                background: localeHover ? PRIMARY_LIGHT : BODY_BG,
-                border: `1px solid ${localeHover ? PRIMARY_MID : HAIRLINE}`,
-                borderRadius: 8,
-                padding: '3px 8px',
-                fontFamily: FONT_BODY,
-                fontWeight: 500,
-                lineHeight: 1.4,
-                cursor: 'pointer',
-                userSelect: 'none',
-                transition: 'color 0.1s, background 0.1s, border-color 0.1s',
-              }}
-            >
-              {locale}
-            </span>
+            <div style={{
+              display: 'flex',
+              border: `1px solid ${HAIRLINE}`,
+              borderRadius: 8,
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}>
+              {FILL_LOCALES.map(({ key }, i) => {
+                const isActive = key === locale
+                const fill = fillByLocale.find((f) => f.key === key)
+                const pct = fill && allEntries.length > 0
+                  ? Math.round(fill.count / allEntries.length * 100)
+                  : null
+                const tooltipText = pct !== null ? `${key}: ${pct}% ingevuld` : key
+                return (
+                  <button
+                    key={key}
+                    title={tooltipText}
+                    onClick={() => setLocale(key)}
+                    style={{
+                      padding: '3px 8px',
+                      fontSize: 11,
+                      fontFamily: FONT_BODY,
+                      fontWeight: isActive ? 600 : 400,
+                      background: isActive ? PRIMARY : BODY_BG,
+                      color: isActive ? CANVAS : MUTED,
+                      border: 'none',
+                      borderLeft: i > 0 ? `1px solid ${HAIRLINE}` : 'none',
+                      cursor: isActive ? 'default' : 'pointer',
+                      lineHeight: 1.4,
+                      userSelect: 'none',
+                      transition: 'background 0.1s, color 0.1s',
+                    }}
+                  >
+                    {key}
+                  </button>
+                )
+              })}
+            </div>
             {status === 'done' && product && (
               <button
                 title="Bekijk in Akeneo"
