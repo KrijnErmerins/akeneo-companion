@@ -74,3 +74,51 @@ export async function getFamilyAttributes(
   const requiredSet = new Set(Object.values(data.attribute_requirements ?? {}).flat())
   return allAttributes.map((code) => ({ code, required: requiredSet.has(code) }))
 }
+
+async function fetchAllPages<T>(
+  baseUrl: string,
+  firstPath: string,
+  token: string,
+): Promise<T[]> {
+  const results: T[] = []
+  let nextUrl: string | null = `${baseUrl}${firstPath}`
+  while (nextUrl) {
+    const res = await fetch(nextUrl, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) throw new Error(`Akeneo fetch failed: ${res.status}`)
+    const page = await res.json() as { _embedded?: { items?: T[] }; _links?: { next?: { href?: string } } }
+    results.push(...(page._embedded?.items ?? []))
+    const nextHref = page._links?.next?.href
+    nextUrl = nextHref ?? null
+  }
+  return results
+}
+
+export async function getAttributeTypes(
+  familyCode: string,
+  credentials: AkeneoCredentials,
+): Promise<Map<string, string>> {
+  const token = await getToken(credentials)
+  const items = await fetchAllPages<{ code: string; type: string }>(
+    credentials.baseUrl,
+    `/api/rest/v1/attributes?families[]=${encodeURIComponent(familyCode)}&limit=100`,
+    token,
+  )
+  const map = new Map<string, string>()
+  for (const item of items) map.set(item.code, item.type)
+  return map
+}
+
+export async function getAttributeOptions(
+  attributeCode: string,
+  credentials: AkeneoCredentials,
+): Promise<Map<string, Record<string, string>>> {
+  const token = await getToken(credentials)
+  const items = await fetchAllPages<{ code: string; labels: Record<string, string> }>(
+    credentials.baseUrl,
+    `/api/rest/v1/attributes/${encodeURIComponent(attributeCode)}/options?limit=100`,
+    token,
+  )
+  const map = new Map<string, Record<string, string>>()
+  for (const item of items) map.set(item.code, item.labels ?? {})
+  return map
+}

@@ -1,5 +1,5 @@
 import type { AkeneoCredentials, ExtensionMessage, ExtensionResponse, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
-import { getFamilyAttributes, lookupProduct } from './akeneo'
+import { getAttributeOptions, getAttributeTypes, getFamilyAttributes, lookupProduct } from './akeneo'
 import { credentials as buildTimeCredentials } from './credentials'
 import { checkForUpdate } from './update-checker'
 
@@ -17,6 +17,8 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
 const productCache = new Map<string, { data: ProductLookupResult; expires: number }>()
 const familyCache = new Map<string, { data: FamilyAttribute[]; expires: number }>()
+const attributeTypeCache = new Map<string, { data: Map<string, string>; expires: number }>()
+const attributeOptionsCache = new Map<string, { data: Map<string, Record<string, string>>; expires: number }>()
 const CACHE_TTL_MS = 5 * 60 * 1000
 
 function loadCredentials(): Promise<AkeneoCredentials> {
@@ -65,6 +67,46 @@ chrome.runtime.onMessage.addListener(
         .then((data) => {
           familyCache.set(message.familyCode!, { data, expires: Date.now() + CACHE_TTL_MS })
           sendResponse({ success: true, data })
+        })
+        .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
+      return true
+    }
+
+    if (message.type === 'GET_ATTRIBUTE_TYPES') {
+      if (!message.familyCode) {
+        sendResponse({ success: false, error: 'Missing familyCode' })
+        return false
+      }
+      const cached = attributeTypeCache.get(message.familyCode)
+      if (cached && cached.expires > Date.now()) {
+        sendResponse({ success: true, data: cached.data as unknown as FamilyAttribute[] })
+        return false
+      }
+      loadCredentials()
+        .then((creds) => getAttributeTypes(message.familyCode!, creds))
+        .then((data) => {
+          attributeTypeCache.set(message.familyCode!, { data, expires: Date.now() + CACHE_TTL_MS })
+          sendResponse({ success: true, data: data as unknown as FamilyAttribute[] })
+        })
+        .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
+      return true
+    }
+
+    if (message.type === 'GET_ATTRIBUTE_OPTIONS') {
+      if (!message.attributeCode) {
+        sendResponse({ success: false, error: 'Missing attributeCode' })
+        return false
+      }
+      const cached = attributeOptionsCache.get(message.attributeCode)
+      if (cached && cached.expires > Date.now()) {
+        sendResponse({ success: true, data: cached.data as unknown as FamilyAttribute[] })
+        return false
+      }
+      loadCredentials()
+        .then((creds) => getAttributeOptions(message.attributeCode!, creds))
+        .then((data) => {
+          attributeOptionsCache.set(message.attributeCode!, { data, expires: Date.now() + CACHE_TTL_MS })
+          sendResponse({ success: true, data: data as unknown as FamilyAttribute[] })
         })
         .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
       return true

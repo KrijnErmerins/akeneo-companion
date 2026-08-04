@@ -30,13 +30,15 @@ export interface ProductLookupResult {
 export interface FamilyAttribute {
   code: string
   required: boolean
+  type?: string
 }
 
 export interface ExtensionMessage {
-  type: 'GET_PRODUCT' | 'SKU_DETECTED' | 'GET_FAMILY_ATTRIBUTES'
+  type: 'GET_PRODUCT' | 'SKU_DETECTED' | 'GET_FAMILY_ATTRIBUTES' | 'GET_ATTRIBUTE_TYPES' | 'GET_ATTRIBUTE_OPTIONS'
   sku?: string
   locale?: string
   familyCode?: string
+  attributeCode?: string
 }
 
 export interface ExtensionResponse {
