@@ -8,6 +8,8 @@ Na deze eenmalige installatie worden toekomstige updates **automatisch door Chro
 
 Ga naar de [nieuwste release](https://github.com/KrijnErmerins/akeneo-companion/releases/latest) en download `akeneo-companion.crx`.
 
+> **Let op:** Download altijd via de [GitHub Releases-pagina](https://github.com/KrijnErmerins/akeneo-companion/releases). Het zip-bestand in de root van de repository is **niet** bedoeld voor installatie en bevat geen gebundelde extensie.
+
 ### Stap 2 — Installeer de extensie
 
 1. Open Chrome en ga naar `chrome://extensions`
