@@ -87,6 +87,6 @@ This project uses **direct push to `main`** — no feature branches, no PRs, no 
 ## Key Constraints
 
 - **Manifest V3** — no persistent background pages; the service worker can be killed. Token cache in `auth.ts` is module-level and survives within a session but not across browser restarts.
-- **No test suite** exists yet.
+- **Test suite** — vitest (`npm test`); covers `akeneo.test.ts`, `auth.test.ts`, `sku-logic.test.ts`, `App.test.tsx` (~512 lines). Run tests before committing logic changes.
 - The popup is fixed at 340×200px (set in `manifest.config.ts` via `default_popup`).
 - All UI strings are in Dutch.
