@@ -1,23 +1,34 @@
 import type { AkeneoCredentials, FamilyAttribute, ProductLookupResult } from '../types/akeneo'
-import { getToken } from './auth'
+import { getToken, clearTokenCache } from './auth'
 
-async function apiFetch(baseUrl: string, path: string, token: string) {
-  return fetch(`${baseUrl}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+// On 401: clear cache and retry once with a fresh token. Second 401 → Dutch error.
+async function authedFetch(url: string, credentials: AkeneoCredentials): Promise<Response> {
+  const token = await getToken(credentials)
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  if (res.status !== 401) return res
+
+  clearTokenCache()
+  const freshToken = await getToken(credentials)
+  const retry = await fetch(url, { headers: { Authorization: `Bearer ${freshToken}` } })
+  if (retry.status === 401) {
+    throw new Error('Credentials verlopen. Ga naar Instellingen om opnieuw in te loggen.')
+  }
+  return retry
+}
+
+async function apiFetch(baseUrl: string, path: string, credentials: AkeneoCredentials) {
+  return authedFetch(`${baseUrl}${path}`, credentials)
 }
 
 export async function lookupProduct(
   sku: string,
   credentials: AkeneoCredentials,
 ): Promise<ProductLookupResult> {
-  const token = await getToken(credentials)
-
   // Try simple product first
   const productRes = await apiFetch(
     credentials.baseUrl,
     `/api/rest/v1/products/${encodeURIComponent(sku)}`,
-    token,
+    credentials,
   )
 
   if (productRes.ok) {
@@ -39,7 +50,7 @@ export async function lookupProduct(
   const modelRes = await apiFetch(
     credentials.baseUrl,
     `/api/rest/v1/product-models/${encodeURIComponent(sku)}`,
-    token,
+    credentials,
   )
 
   if (modelRes.ok) {
@@ -59,11 +70,10 @@ export async function getFamilyAttributes(
   familyCode: string,
   credentials: AkeneoCredentials,
 ): Promise<FamilyAttribute[]> {
-  const token = await getToken(credentials)
   const res = await apiFetch(
     credentials.baseUrl,
     `/api/rest/v1/families/${encodeURIComponent(familyCode)}`,
-    token,
+    credentials,
   )
   if (!res.ok) throw new Error(`Family fetch failed: ${res.status}`)
   const data = await res.json() as {
@@ -78,12 +88,12 @@ export async function getFamilyAttributes(
 async function fetchAllPages<T>(
   baseUrl: string,
   firstPath: string,
-  token: string,
+  credentials: AkeneoCredentials,
 ): Promise<T[]> {
   const results: T[] = []
   let nextUrl: string | null = `${baseUrl}${firstPath}`
   while (nextUrl) {
-    const res = await fetch(nextUrl, { headers: { Authorization: `Bearer ${token}` } })
+    const res = await authedFetch(nextUrl, credentials)
     if (!res.ok) throw new Error(`Akeneo fetch failed: ${res.status}`)
     const page = await res.json() as { _embedded?: { items?: T[] }; _links?: { next?: { href?: string } } }
     results.push(...(page._embedded?.items ?? []))
@@ -97,11 +107,10 @@ export async function getAttributeTypes(
   familyCode: string,
   credentials: AkeneoCredentials,
 ): Promise<Map<string, string>> {
-  const token = await getToken(credentials)
   const items = await fetchAllPages<{ code: string; type: string }>(
     credentials.baseUrl,
     `/api/rest/v1/attributes?families[]=${encodeURIComponent(familyCode)}&limit=100`,
-    token,
+    credentials,
   )
   const map = new Map<string, string>()
   for (const item of items) map.set(item.code, item.type)
@@ -112,11 +121,10 @@ export async function getAttributeOptions(
   attributeCode: string,
   credentials: AkeneoCredentials,
 ): Promise<Map<string, Record<string, string>>> {
-  const token = await getToken(credentials)
   const items = await fetchAllPages<{ code: string; labels: Record<string, string> }>(
     credentials.baseUrl,
     `/api/rest/v1/attributes/${encodeURIComponent(attributeCode)}/options?limit=100`,
-    token,
+    credentials,
   )
   const map = new Map<string, Record<string, string>>()
   for (const item of items) map.set(item.code, item.labels ?? {})

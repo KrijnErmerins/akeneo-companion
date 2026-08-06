@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { lookupProduct } from './akeneo'
+import * as auth from './auth'
 
 vi.mock('./auth', () => ({
   getToken: vi.fn().mockResolvedValue('mock-token'),
+  clearTokenCache: vi.fn(),
 }))
 
 const CREDS = {
@@ -127,5 +129,30 @@ describe('lookupProduct — error handling', () => {
     ]))
 
     await expect(lookupProduct('GHOST', CREDS)).rejects.toThrow('"GHOST" not found')
+  })
+})
+
+describe('lookupProduct — 401 token refresh', () => {
+  it('clears token cache and retries once on 401, succeeds on retry', async () => {
+    vi.stubGlobal('fetch', makeFetch([
+      { ok: false, status: 401, body: {} },
+      { ok: true, status: 200, body: { identifier: 'X', family: null, values: {} } },
+    ]))
+
+    const result = await lookupProduct('X', CREDS)
+
+    expect(auth.clearTokenCache).toHaveBeenCalledOnce()
+    expect(auth.getToken).toHaveBeenCalledTimes(2)
+    expect(result.identifier).toBe('X')
+  })
+
+  it('throws Dutch credentials error when retry also returns 401', async () => {
+    vi.stubGlobal('fetch', makeFetch([
+      { ok: false, status: 401, body: {} },
+      { ok: false, status: 401, body: {} },
+    ]))
+
+    await expect(lookupProduct('X', CREDS)).rejects.toThrow('Credentials verlopen')
+    expect(auth.clearTokenCache).toHaveBeenCalledOnce()
   })
 })
