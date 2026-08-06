@@ -135,8 +135,8 @@ describe('App — done state', () => {
       render(<App />)
     })
 
-    // 1 filled out of 2 attributes
-    expect(screen.getByText('1/2 ingevuld')).toBeInTheDocument()
+    // 1 filled out of 2 attributes shown as "NL 1/2" (label + count/total)
+    expect(screen.getByText('NL 1/2')).toBeInTheDocument()
   })
 
   it('renders product type chip', async () => {

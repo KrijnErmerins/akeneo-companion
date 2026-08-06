@@ -49,9 +49,9 @@ The credentials object at `src/background/credentials.ts` reads these via `impor
 
 5. `src/popup/App.tsx` sends a `GET_PRODUCT` message to the background and renders the response as an attribute table with fill-rate badge.
 
-**Locale resolution:** `src/types/akeneo.ts` exports `DOMAIN_LOCALE_MAP` (TLD → locale) and `HOSTNAME_LOCALE_MAP` (full hostname → locale, for staging). The same maps are duplicated inline in `src/content/sku-detector.ts` — keep them in sync when adding new domains.
+**Locale resolution:** `src/types/akeneo.ts` is the single source of truth for locale mapping. It exports `DOMAIN_LOCALE_MAP` (TLD → locale), `HOSTNAME_LOCALE_MAP` (full hostname → locale, for staging), and `FILL_LOCALES` (derived automatically from `DOMAIN_LOCALE_MAP`). `src/content/sku-logic.ts` imports from there; the popup imports `FILL_LOCALES` from there too.
 
-**Adding a new storefront domain:** Update `content_scripts.matches` and `host_permissions` in `manifest.config.ts`, and add the TLD/hostname to both `DOMAIN_LOCALE_MAP`/`HOSTNAME_LOCALE_MAP` in `src/types/akeneo.ts` and the inline maps in `src/content/sku-detector.ts`.
+**Adding a new storefront domain:** Update `content_scripts.matches` and `host_permissions` in `manifest.config.ts`, and add the TLD/hostname to `DOMAIN_LOCALE_MAP`/`HOSTNAME_LOCALE_MAP` in `src/types/akeneo.ts`. `FILL_LOCALES` updates automatically — no other files need changing.
 
 ## Behavioral Guidelines
 
