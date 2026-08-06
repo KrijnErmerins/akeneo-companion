@@ -65,3 +65,8 @@ export const HOSTNAME_LOCALE_MAP: Record<string, string> = {
   'de.ledchampion.magento2.led.p.maxserv.io': 'de_DE',
   'de.ledchampion.magento2.led.a.maxserv.dev': 'de_DE',
 }
+
+// Derived from DOMAIN_LOCALE_MAP — single source of truth for fill-rate locale list
+export const FILL_LOCALES: { key: string; label: string }[] = Object.entries(DOMAIN_LOCALE_MAP).map(
+  ([tld, locale]) => ({ key: locale, label: tld.toUpperCase() }),
+)

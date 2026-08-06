@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import DOMPurify from 'dompurify'
 import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
-import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
+import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP, FILL_LOCALES } from '../types/akeneo'
 import {
   PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
   CANVAS, BODY_BG, INK, MUTED, HAIRLINE,
   DANGER, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
-  SUCCESS, FONT_HEADING, FONT_BODY,
+  SUCCESS, SUCCESS_TEXT, FONT_HEADING, FONT_BODY,
 } from '../tokens'
 
 const UNIT_MAP: Record<string, string> = {
@@ -69,6 +69,47 @@ function resolveValue(values: AttributeValue[], locale: string, optionMap?: Map<
     values.find((v) => v.locale === null) ??
     values[0]
   return match ? formatValue(match.data, optionMap, locale) : '—'
+}
+
+const WARNING      = '#F59E0B'
+const WARNING_TEXT = '#92400E'
+const WARNING_BG   = '#FFFBEB'
+const SUCCESS_BG   = '#F0FDF4'
+
+function CompletenessBadge({ pct, filled, total }: { pct: number; filled: number; total: number }) {
+  const bg   = pct >= 80 ? SUCCESS_BG   : pct >= 50 ? WARNING_BG  : DANGER_BG
+  const text = pct >= 80 ? SUCCESS_TEXT : pct >= 50 ? WARNING_TEXT : DANGER_TEXT
+  const dot  = pct >= 80 ? SUCCESS      : pct >= 50 ? WARNING      : DANGER
+  return (
+    <span
+      title={`${filled}/${total} verplichte velden ingevuld (actieve taal)`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '2px 8px',
+        background: bg,
+        borderRadius: 999,
+        fontSize: 11,
+        fontFamily: FONT_BODY,
+        fontWeight: 600,
+        color: text,
+        letterSpacing: '0.02em',
+        userSelect: 'none',
+        cursor: 'default',
+      }}
+    >
+      <span style={{
+        width: 6,
+        height: 6,
+        borderRadius: '50%',
+        background: dot,
+        display: 'inline-block',
+        flexShrink: 0,
+      }} />
+      {pct}%
+    </span>
+  )
 }
 
 function Chip({ children }: { children: string }) {
@@ -410,6 +451,17 @@ export default function App() {
   const allEntries = product ? Object.entries(product.values) : []
   const requiredSet = new Set(familyAttrs?.filter((a) => a.required).map((a) => a.code) ?? [])
 
+  const reqTotal = familyAttrs ? familyAttrs.filter((a) => a.required).length : null
+  const reqFilled = familyAttrs && product
+    ? familyAttrs.filter((a) => a.required).filter((a) => {
+        const vals = product.values[a.code]
+        return vals ? resolveValue(vals, locale, optionLabels[a.code]) !== '—' : false
+      }).length
+    : null
+  const reqPct = reqTotal !== null && reqTotal > 0 && reqFilled !== null
+    ? Math.round(reqFilled / reqTotal * 100)
+    : null
+
   const filteredEntries = filterQuery
     ? allEntries.filter(([attr]) => prettifyAttr(attr).toLowerCase().includes(filterQuery.toLowerCase()))
     : allEntries
@@ -424,11 +476,6 @@ export default function App() {
       })
     : filteredEntries
 
-  const FILL_LOCALES = [
-    { key: 'nl_NL', label: 'NL' },
-    { key: 'nl_BE', label: 'BE' },
-    { key: 'de_DE', label: 'DE' },
-  ]
   const fillByLocale = FILL_LOCALES.map(({ key, label }) => ({
     key, label,
     count: allEntries.filter(([, v]) => resolveValue(v, key) !== '—').length,
@@ -590,6 +637,9 @@ export default function App() {
               <Chip>{product.type}</Chip>
               {product.family && <Chip>{product.family}</Chip>}
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
+                {reqPct !== null && reqTotal !== null && reqFilled !== null && (
+                  <CompletenessBadge pct={reqPct} filled={reqFilled} total={reqTotal} />
+                )}
                 {fillByLocale.map(({ key, label, count }) => (
                   <span key={key} style={{
                     fontSize: 11,
