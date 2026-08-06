@@ -40,7 +40,7 @@ async function testAkeneoConnection(creds: AkeneoCredentials): Promise<void> {
   await res.json()
 }
 
-function OptionsApp() {
+export function OptionsApp() {
   const [form, setForm] = useState<AkeneoCredentials>({
     baseUrl: '',
     clientId: '',
