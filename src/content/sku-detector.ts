@@ -1,13 +1,17 @@
 import { extractSku, getLocale } from './sku-logic'
+import { scrapePdpData } from './pdp-scraper'
 
 // Tracks the most-recently-detected SKU so variant changes override the static JSON-LD value.
 let currentSku: string | null = extractSku()
 const locale = getLocale(window.location.hostname)
 
-// Respond to popup asking for SKU on demand
+// Respond to popup asking for SKU or scraped PDP data on demand
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'GET_SKU') {
     sendResponse({ sku: currentSku })
+  }
+  if (message.type === 'GET_PDP_DATA') {
+    sendResponse({ data: scrapePdpData() })
   }
 })
 

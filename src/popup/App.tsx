@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import DOMPurify from 'dompurify'
-import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
+import type { ExtensionResponse, AttributeValue, DiffField, DiffFieldKey, FamilyAttribute, FamilyAttributesResponse, PdpScrapedData, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP, FILL_LOCALES } from '../types/akeneo'
+import { diffPdpWithAkeneo } from '../content/pdp-diff'
 import {
   PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
   CANVAS, BODY_BG, INK, MUTED, HAIRLINE,
@@ -113,6 +114,48 @@ function CompletenessBadge({ pct, title, icon }: { pct: number; title: string; i
         }} />
       )}
       {pct}%
+    </span>
+  )
+}
+
+const DIFF_FIELD_LABELS: Record<DiffFieldKey, string> = {
+  title: 'Titel', price: 'Prijs', ean: 'EAN', image: 'Afbeelding',
+}
+
+function DiffBadge({ diffFields }: { diffFields: DiffField[] }) {
+  const relevant = diffFields.filter((d) => d.status !== 'unavailable')
+  if (relevant.length === 0) return null
+  const mismatches = relevant.filter((d) => d.status !== 'match')
+  const ok = mismatches.length === 0
+  const tooltip = ok
+    ? 'Site komt overeen met Akeneo'
+    : mismatches
+        .map((d) => `${DIFF_FIELD_LABELS[d.field]}: site "${d.scrapedValue ?? '—'}" ≠ Akeneo "${d.akeneoValue ?? '—'}"`)
+        .join('\n')
+  const bg   = ok ? SUCCESS_BG   : DANGER_BG
+  const text = ok ? SUCCESS_TEXT : DANGER_TEXT
+  const dot  = ok ? SUCCESS      : DANGER
+  return (
+    <span
+      title={tooltip}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '2px 8px',
+        background: bg,
+        borderRadius: 999,
+        fontSize: 11,
+        fontFamily: FONT_BODY,
+        fontWeight: 600,
+        color: text,
+        letterSpacing: '0.02em',
+        userSelect: 'none',
+        cursor: 'default',
+      }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0 }} />
+      {ok ? 'Site = Akeneo' : `${mismatches.length} afwijking${mismatches.length === 1 ? '' : 'en'}`}
     </span>
   )
 }
@@ -298,6 +341,7 @@ export default function App() {
   const [sku, setSku] = useState<string | null>(null)
   const [locale, setLocale] = useState<string>('nl_NL')
   const [product, setProduct] = useState<ProductLookupResult | null>(null)
+  const [pdpData, setPdpData] = useState<PdpScrapedData | null>(null)
   const [familyAttrs, setFamilyAttrs] = useState<FamilyAttribute[] | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
@@ -402,6 +446,9 @@ export default function App() {
 
       const lookupAndRender = (sku: string) => {
         setSku(sku)
+        chrome.tabs.sendMessage(tabId, { type: 'GET_PDP_DATA' }, (pdpRes) => {
+          if (!chrome.runtime.lastError && pdpRes?.data) setPdpData(pdpRes.data as PdpScrapedData)
+        })
         chrome.runtime.sendMessage(
           { type: 'GET_PRODUCT', sku, locale: detectedLocale },
           (res: ExtensionResponse) => {
@@ -494,6 +541,8 @@ export default function App() {
         return 0
       })
     : filteredEntries
+
+  const diffFields = product && pdpData ? diffPdpWithAkeneo(pdpData, product, locale) : null
 
   const fillByLocale = FILL_LOCALES.map(({ key, label }) => ({
     key, label,
@@ -662,6 +711,7 @@ export default function App() {
                     title={`${reqFilled}/${reqTotal} verplichte velden ingevuld (actieve taal)`}
                   />
                 )}
+                {diffFields && <DiffBadge diffFields={diffFields} />}
                 {mediaPct !== null && mediaTotal !== null && mediaFilled !== null && (
                   <CompletenessBadge
                     pct={mediaPct}

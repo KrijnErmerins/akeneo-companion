@@ -34,11 +34,31 @@ export interface FamilyAttribute {
 }
 
 export interface ExtensionMessage {
-  type: 'GET_PRODUCT' | 'SKU_DETECTED' | 'GET_FAMILY_ATTRIBUTES' | 'GET_ATTRIBUTE_TYPES' | 'GET_ATTRIBUTE_OPTIONS'
+  type: 'GET_PRODUCT' | 'SKU_DETECTED' | 'GET_FAMILY_ATTRIBUTES' | 'GET_ATTRIBUTE_TYPES' | 'GET_ATTRIBUTE_OPTIONS' | 'GET_PDP_DATA'
   sku?: string
   locale?: string
   familyCode?: string
   attributeCode?: string
+}
+
+// Values scraped directly from the storefront PDP DOM, for the PDP-vs-Akeneo discrepancy check
+export interface PdpScrapedData {
+  title: string | null
+  price: string | null
+  ean: string | null
+  image: string | null
+}
+
+export type DiffFieldKey = 'title' | 'price' | 'ean' | 'image'
+
+export type DiffStatus = 'match' | 'mismatch' | 'missing-scraped' | 'missing-akeneo' | 'unavailable'
+
+export interface DiffField {
+  field: DiffFieldKey
+  akeneoCode: string | null
+  scrapedValue: string | null
+  akeneoValue: string | null
+  status: DiffStatus
 }
 
 export interface ExtensionResponse {
