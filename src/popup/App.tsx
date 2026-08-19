@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import DOMPurify from 'dompurify'
 import type { ExtensionResponse, AttributeValue, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
 import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP, FILL_LOCALES } from '../types/akeneo'
@@ -8,6 +9,8 @@ import {
   DANGER, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
   SUCCESS, SUCCESS_TEXT, FONT_HEADING, FONT_BODY,
 } from '../tokens'
+
+const MEDIA_TYPES = new Set(['pim_catalog_image', 'pim_catalog_asset_collection'])
 
 const UNIT_MAP: Record<string, string> = {
   WATT: 'W', KILOWATT: 'kW',
@@ -76,13 +79,13 @@ const WARNING_TEXT = '#92400E'
 const WARNING_BG   = '#FFFBEB'
 const SUCCESS_BG   = '#F0FDF4'
 
-function CompletenessBadge({ pct, filled, total }: { pct: number; filled: number; total: number }) {
+function CompletenessBadge({ pct, title, icon }: { pct: number; title: string; icon?: ReactNode }) {
   const bg   = pct >= 80 ? SUCCESS_BG   : pct >= 50 ? WARNING_BG  : DANGER_BG
   const text = pct >= 80 ? SUCCESS_TEXT : pct >= 50 ? WARNING_TEXT : DANGER_TEXT
   const dot  = pct >= 80 ? SUCCESS      : pct >= 50 ? WARNING      : DANGER
   return (
     <span
-      title={`${filled}/${total} verplichte velden ingevuld (actieve taal)`}
+      title={title}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -99,14 +102,16 @@ function CompletenessBadge({ pct, filled, total }: { pct: number; filled: number
         cursor: 'default',
       }}
     >
-      <span style={{
-        width: 6,
-        height: 6,
-        borderRadius: '50%',
-        background: dot,
-        display: 'inline-block',
-        flexShrink: 0,
-      }} />
+      {icon ?? (
+        <span style={{
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          background: dot,
+          display: 'inline-block',
+          flexShrink: 0,
+        }} />
+      )}
       {pct}%
     </span>
   )
@@ -298,6 +303,7 @@ export default function App() {
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
   const [optionLabels, setOptionLabels] = useState<Record<string, Map<string, Record<string, string>>>>({})
+  const [attributeTypes, setAttributeTypes] = useState<Map<string, string>>(new Map())
   const [filterQuery, setFilterQuery] = useState<string>('')
   const [akeneoHover, setAkeneoHover] = useState(false)
   const [clearHover, setClearHover] = useState(false)
@@ -346,6 +352,7 @@ export default function App() {
       (res: FamilyAttributesResponse) => {
         if (!res.success || !res.data) return
         const typeMap = res.data as unknown as Map<string, string>
+        setAttributeTypes(typeMap)
         const selectAttrs = Object.keys(product.values).filter((code) => SELECT_TYPES.has(typeMap.get(code) ?? ''))
         if (selectAttrs.length === 0) return
         Promise.all(
@@ -460,6 +467,18 @@ export default function App() {
     : null
   const reqPct = reqTotal !== null && reqTotal > 0 && reqFilled !== null
     ? Math.round(reqFilled / reqTotal * 100)
+    : null
+
+  const mediaAttrs = familyAttrs?.filter((a) => MEDIA_TYPES.has(attributeTypes.get(a.code) ?? '')) ?? []
+  const mediaTotal = familyAttrs ? mediaAttrs.length : null
+  const mediaFilled = familyAttrs && product
+    ? mediaAttrs.filter((a) => {
+        const vals = product.values[a.code]
+        return vals ? resolveValue(vals, locale, optionLabels[a.code]) !== '—' : false
+      }).length
+    : null
+  const mediaPct = mediaTotal !== null && mediaTotal > 0 && mediaFilled !== null
+    ? Math.round(mediaFilled / mediaTotal * 100)
     : null
 
   const filteredEntries = filterQuery
@@ -638,7 +657,23 @@ export default function App() {
               {product.family && <Chip>{product.family}</Chip>}
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
                 {reqPct !== null && reqTotal !== null && reqFilled !== null && (
-                  <CompletenessBadge pct={reqPct} filled={reqFilled} total={reqTotal} />
+                  <CompletenessBadge
+                    pct={reqPct}
+                    title={`${reqFilled}/${reqTotal} verplichte velden ingevuld (actieve taal)`}
+                  />
+                )}
+                {mediaPct !== null && mediaTotal !== null && mediaFilled !== null && (
+                  <CompletenessBadge
+                    pct={mediaPct}
+                    title={`${mediaFilled}/${mediaTotal} media-attributen ingevuld (afbeeldingen/assets)`}
+                    icon={
+                      <svg width="10" height="10" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                        <rect x="1" y="2" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+                        <circle cx="4.5" cy="5.5" r="1" fill="currentColor" />
+                        <path d="M1.5 10L5 6.5L7.5 9L10 6.5L12.5 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    }
+                  />
                 )}
                 {fillByLocale.map(({ key, label, count }) => (
                   <span key={key} style={{
