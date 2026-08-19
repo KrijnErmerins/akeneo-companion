@@ -1,4 +1,4 @@
-import type { AkeneoCredentials, ExtensionMessage, ExtensionResponse, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
+import type { AkeneoCredentials, AttributeValue, ExtensionMessage, ExtensionResponse, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
 import { getAttributeOptions, getAttributeTypes, getFamilyAttributes, lookupProduct } from './akeneo'
 import { credentials as buildTimeCredentials } from './credentials'
 import { checkForUpdate } from './update-checker'
@@ -21,6 +21,26 @@ const attributeTypeCache = new Map<string, { data: Map<string, string>; expires:
 const attributeOptionsCache = new Map<string, { data: Map<string, Record<string, string>>; expires: number }>()
 const CACHE_TTL_MS = 5 * 60 * 1000
 
+function isFilled(values: AttributeValue[] | undefined, locale?: string): boolean {
+  if (!values) return false
+  const match = values.find((v) => v.locale === (locale ?? null)) ?? values.find((v) => v.locale === null) ?? values[0]
+  const data = match?.data
+  return data !== null && data !== undefined && data !== '' && !(Array.isArray(data) && data.length === 0)
+}
+
+function updateBadge(product: ProductLookupResult, locale?: string): void {
+  const entries = Object.values(product.values)
+  if (entries.length === 0) {
+    chrome.action.setBadgeText({ text: '' })
+    return
+  }
+  const filled = entries.filter((v) => isFilled(v, locale)).length
+  const pct = Math.round((filled / entries.length) * 100)
+  const color = pct >= 80 ? '#22C55E' : pct >= 50 ? '#F59E0B' : '#DC2626'
+  chrome.action.setBadgeText({ text: `${pct}%` })
+  chrome.action.setBadgeBackgroundColor({ color })
+}
+
 function loadCredentials(): Promise<AkeneoCredentials> {
   return new Promise((resolve) => {
     chrome.storage.local.get('credentials', ({ credentials }) => {
@@ -39,6 +59,7 @@ chrome.runtime.onMessage.addListener(
       const cacheKey = `${message.sku}:${message.locale ?? ''}`
       const cached = productCache.get(cacheKey)
       if (cached && cached.expires > Date.now()) {
+        updateBadge(cached.data, message.locale)
         sendResponse({ success: true, data: cached.data })
         return false
       }
@@ -46,6 +67,7 @@ chrome.runtime.onMessage.addListener(
         .then((creds) => lookupProduct(message.sku!, creds))
         .then((data) => {
           productCache.set(cacheKey, { data, expires: Date.now() + CACHE_TTL_MS })
+          updateBadge(data, message.locale)
           sendResponse({ success: true, data })
         })
         .catch((err) => sendResponse({ success: false, error: (err as Error).message }))

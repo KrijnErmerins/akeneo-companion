@@ -82,6 +82,25 @@ describe('GET_PRODUCT', () => {
     expect(akeneo.lookupProduct).toHaveBeenCalledWith('PROD-A', BUILD_CREDS)
   })
 
+  it('sets the toolbar badge to the fill percentage for the requested locale', async () => {
+    const product = {
+      type: 'product' as const,
+      identifier: 'PROD-BADGE',
+      family: null,
+      values: {
+        name: [{ locale: 'nl_NL', scope: null, data: 'Lamp' }],
+        color: [{ locale: 'nl_NL', scope: null, data: '' }],
+      },
+    }
+    vi.mocked(akeneo.lookupProduct).mockResolvedValue(product)
+
+    const { response } = invoke({ type: 'GET_PRODUCT', sku: 'PROD-BADGE', locale: 'nl_NL' })
+    await response
+
+    expect(chrome.action.setBadgeText).toHaveBeenCalledWith({ text: '50%' })
+    expect(chrome.action.setBadgeBackgroundColor).toHaveBeenCalledWith({ color: '#F59E0B' })
+  })
+
   it('passes stored credentials to lookupProduct when set in storage', async () => {
     const storedCreds = { baseUrl: 'https://stored.com', clientId: 'sc', clientSecret: 'ss', username: 'su', password: 'sp' }
     vi.mocked(chrome.storage.local.get).mockImplementation((_k, cb) => {

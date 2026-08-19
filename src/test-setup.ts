@@ -26,6 +26,10 @@ const chromeMock = {
   scripting: {
     executeScript: vi.fn(),
   },
+  action: {
+    setBadgeText: vi.fn(),
+    setBadgeBackgroundColor: vi.fn(),
+  },
 }
 
 vi.stubGlobal('chrome', chromeMock)
