@@ -68,7 +68,7 @@ jobs:
 
       - name: Pack extension as CRX
         run: |
-          google-chrome --pack-extension=dist --pack-extension-key=key.pem
+          google-chrome --no-sandbox --pack-extension=dist --pack-extension-key=key.pem
           mv dist.crx akeneo-companion.crx
           rm key.pem
 
