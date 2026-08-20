@@ -93,11 +93,22 @@ jobs:
             git push origin HEAD:main
           fi
 
-      - uses: https://code.forgejo.org/actions/forgejo-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-dir: .
-          files: |
-            akeneo-companion.zip
-            akeneo-companion.crx
-            update.xml
+      - name: Create Forgejo release and upload assets
+        env:
+          FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          API="https://git.krijn.dev/api/v1/repos/krijn/akeneo-companion"
+
+          RELEASE_ID=$(curl -sf -X POST "$API/releases" \
+            -H "Authorization: token ${FORGEJO_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\": \"${TAG}\", \"name\": \"${TAG}\", \"generate_release_notes\": true}" \
+            | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+
+          for FILE in akeneo-companion.zip akeneo-companion.crx update.xml; do
+            curl -sf -X POST "$API/releases/${RELEASE_ID}/assets?name=${FILE}" \
+              -H "Authorization: token ${FORGEJO_TOKEN}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@${FILE}"
+          done
