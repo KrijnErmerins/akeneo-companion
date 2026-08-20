@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Fundering — lees dit eerst
+
+Voordat je hier functioneel op doorontwikkelt: lees `VISION.md` (waarom dit bestaat, doelgroep, non-goals), `PRODUCT.md` (scope, MVP-afbakening) en `AUTONOMY.md` (wat je zelfstandig mag beslissen, wat altijd akkoord vooraf vereist). Dit is een blijvend intern LedKoning-hulpmiddel voor het content/PIM-team — geen extern/commercieel product. Log belangrijke keuzes in `decisions/log.md`.
+
 ## Commands
 
 `tsc` and `vite` are not globally available — always run them via local binaries:
