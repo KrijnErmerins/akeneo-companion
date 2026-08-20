@@ -19,6 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       - run: npm ci
 
@@ -51,48 +52,6 @@ jobs:
       - name: Zip extension
         run: cd dist && zip -r ../akeneo-companion.zip . && cd ..
 
-      - name: Install Google Chrome
-        run: |
-          if command -v google-chrome-stable >/dev/null 2>&1 || command -v google-chrome >/dev/null 2>&1; then
-            echo "Chrome already installed: $(google-chrome --version 2>/dev/null || google-chrome-stable --version)"
-          else
-            wget -q -O /tmp/google-chrome-signing.pub https://dl.google.com/linux/linux_signing_key.pub
-            gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
-            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
-            apt-get update
-            apt-get install -y google-chrome-stable
-          fi
-
-      - name: Write PEM key
-        run: echo "${{ secrets.CRX_KEY_PEM }}" > key.pem
-
-      - name: Pack extension as CRX
-        run: |
-          google-chrome --no-sandbox --pack-extension=dist --pack-extension-key=key.pem
-          mv dist.crx akeneo-companion.crx
-          rm key.pem
-
-      - name: Generate update.xml
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          TAG="${GITHUB_REF_NAME}"
-          cat > update.xml <<EOF
-          <?xml version='1.0' encoding='UTF-8'?>
-          <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
-            <app appid='migofmlkogajdnkkclldmgajanlamnmm'>
-              <updatecheck codebase='https://git.krijn.dev/krijn/akeneo-companion/releases/download/${TAG}/akeneo-companion.crx' version='${VERSION}' />
-            </app>
-          </gupdate>
-          EOF
-
-      - name: Commit update.xml to main
-        run: |
-          git add update.xml
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: update.xml for ${GITHUB_REF_NAME}"
-            git push origin HEAD:main
-          fi
-
       - name: Create Forgejo release and upload assets
         env:
           FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -106,9 +65,7 @@ jobs:
             -d "{\"tag_name\": \"${TAG}\", \"name\": \"${TAG}\", \"generate_release_notes\": true}" \
             | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
 
-          for FILE in akeneo-companion.zip akeneo-companion.crx update.xml; do
-            curl -sf -X POST "$API/releases/${RELEASE_ID}/assets?name=${FILE}" \
-              -H "Authorization: token ${FORGEJO_TOKEN}" \
-              -H "Content-Type: application/octet-stream" \
-              --data-binary "@${FILE}"
-          done
+          curl -sf -X POST "$API/releases/${RELEASE_ID}/assets?name=akeneo-companion.zip" \
+            -H "Authorization: token ${FORGEJO_TOKEN}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@akeneo-companion.zip"
