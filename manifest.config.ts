@@ -7,7 +7,7 @@ export default defineManifest({
   name: 'Akeneo Companion',
   version: packageJson.version,
   key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAph/cNmXYZ601CBn1WKkiGcx7Q9/NTJYRvj6J7qY6o9GXhxgYrlkAimDrvMPE+noBkahCEhQK9Ys1grPOhQDMQxzfvuk9buRddgO0AGpmYtI09i4GvvCXl5nyP9X5SFClNcQZN7Q0ZiRVr842Wbd/A/ujZAlxM1XdYO4+9Rfv4CoHU+cBjCpYkYe0vdYOWeifOjOMtyna7+24LqsMUMbwdLM9kJrvaAhvfq15slQSPZAIeyJX6U/JTCPLSEhM/uYGR6JnVfhqFsDCPohcOJbOqqupeBTVSWEnGWwKAuvMVkf2JpGkqKVBe1f8hUE2I1dfKuffScDE91l9fNPbEx66MQIDAQAB',
-  update_url: 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/update.xml',
+  update_url: 'https://git.krijn.dev/krijn/akeneo-companion/raw/branch/main/update.xml',
   description: 'Check Akeneo product completeness from any LedKoning PDP',
   icons: {
     '16': 'icons/icon16.png',
@@ -91,7 +91,7 @@ export default defineManifest({
     'https://de.ledchampion.magento2.led.p.maxserv.io/*',
     'https://de.ledchampion.magento2.led.a.maxserv.dev/*',
     'https://*.akeneo.com/*',
-    'https://api.github.com/*',
+    'https://git.krijn.dev/*',
   ],
   permissions: ['storage', 'activeTab', 'scripting'],
 } as any)

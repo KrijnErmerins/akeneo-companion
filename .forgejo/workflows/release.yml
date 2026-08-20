@@ -11,13 +11,14 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: catthehacker/ubuntu:act-latest
     steps:
       - uses: https://code.forgejo.org/actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
       - run: npm ci
 
@@ -44,19 +45,22 @@ jobs:
           VITE_AKENEO_USERNAME: ${{ secrets.VITE_AKENEO_USERNAME }}
           VITE_AKENEO_PASSWORD: ${{ secrets.VITE_AKENEO_PASSWORD }}
 
+      - name: Install zip
+        run: command -v zip >/dev/null 2>&1 || (apt-get update && apt-get install -y zip)
+
       - name: Zip extension
         run: cd dist && zip -r ../akeneo-companion.zip . && cd ..
 
       - name: Install Google Chrome
         run: |
-          if command -v google-chrome-stable &>/dev/null || command -v google-chrome &>/dev/null; then
+          if command -v google-chrome-stable >/dev/null 2>&1 || command -v google-chrome >/dev/null 2>&1; then
             echo "Chrome already installed: $(google-chrome --version 2>/dev/null || google-chrome-stable --version)"
           else
             wget -q -O /tmp/google-chrome-signing.pub https://dl.google.com/linux/linux_signing_key.pub
-            sudo gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
-            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-            sudo apt-get update
-            sudo apt-get install -y google-chrome-stable
+            gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
+            apt-get update
+            apt-get install -y google-chrome-stable
           fi
 
       - name: Write PEM key
@@ -64,7 +68,7 @@ jobs:
 
       - name: Pack extension as CRX
         run: |
-          google-chrome --pack-extension=dist --pack-extension-key=key.pem
+          google-chrome --no-sandbox --pack-extension=dist --pack-extension-key=key.pem
           mv dist.crx akeneo-companion.crx
           rm key.pem
 
@@ -75,33 +79,36 @@ jobs:
           cat > update.xml <<EOF
           <?xml version='1.0' encoding='UTF-8'?>
           <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
-            <app appid='maedoobjjnagcbgdkclfnkjdbjkkmnap'>
+            <app appid='migofmlkogajdnkkclldmgajanlamnmm'>
               <updatecheck codebase='https://git.krijn.dev/krijn/akeneo-companion/releases/download/${TAG}/akeneo-companion.crx' version='${VERSION}' />
             </app>
           </gupdate>
           EOF
 
-      - uses: https://code.forgejo.org/actions/upload-artifact@v4
-        with:
-          name: extension
-          path: |
-            akeneo-companion.zip
-            akeneo-companion.crx
-            update.xml
+      - name: Commit update.xml to main
+        run: |
+          git add update.xml
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update.xml for ${GITHUB_REF_NAME}"
+            git push origin HEAD:main
+          fi
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: https://code.forgejo.org/actions/download-artifact@v4
-        with:
-          name: extension
+      - name: Create Forgejo release and upload assets
+        env:
+          FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          API="https://git.krijn.dev/api/v1/repos/krijn/akeneo-companion"
 
-      - uses: https://code.forgejo.org/actions/forgejo-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-dir: .
-          files: |
-            akeneo-companion.zip
-            akeneo-companion.crx
-            update.xml
+          RELEASE_ID=$(curl -sf -X POST "$API/releases" \
+            -H "Authorization: token ${FORGEJO_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\": \"${TAG}\", \"name\": \"${TAG}\", \"generate_release_notes\": true}" \
+            | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+
+          for FILE in akeneo-companion.zip akeneo-companion.crx update.xml; do
+            curl -sf -X POST "$API/releases/${RELEASE_ID}/assets?name=${FILE}" \
+              -H "Authorization: token ${FORGEJO_TOKEN}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@${FILE}"
+          done

@@ -1,5 +1,5 @@
 import type { AkeneoCredentials, AttributeValue, ExtensionMessage, ExtensionResponse, FamilyAttribute, FamilyAttributesResponse, ProductLookupResult } from '../types/akeneo'
-import { getAttributeOptions, getAttributeTypes, getFamilyAttributes, lookupProduct } from './akeneo'
+import { getAttributeGroups, getAttributeOptions, getAttributeTypes, getFamilyAttributes, lookupProduct } from './akeneo'
 import { credentials as buildTimeCredentials } from './credentials'
 import { checkForUpdate } from './update-checker'
 
@@ -17,8 +17,9 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
 const productCache = new Map<string, { data: ProductLookupResult; expires: number }>()
 const familyCache = new Map<string, { data: FamilyAttribute[]; expires: number }>()
-const attributeTypeCache = new Map<string, { data: Map<string, string>; expires: number }>()
+const attributeTypeCache = new Map<string, { data: Map<string, { type: string; group: string }>; expires: number }>()
 const attributeOptionsCache = new Map<string, { data: Map<string, Record<string, string>>; expires: number }>()
+let attributeGroupsCache: { data: Map<string, { labels: Record<string, string>; sortOrder: number }>; expires: number } | null = null
 const CACHE_TTL_MS = 5 * 60 * 1000
 
 function isFilled(values: AttributeValue[] | undefined, locale?: string): boolean {
@@ -128,6 +129,21 @@ chrome.runtime.onMessage.addListener(
         .then((creds) => getAttributeOptions(message.attributeCode!, creds))
         .then((data) => {
           attributeOptionsCache.set(message.attributeCode!, { data, expires: Date.now() + CACHE_TTL_MS })
+          sendResponse({ success: true, data: data as unknown as FamilyAttribute[] })
+        })
+        .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
+      return true
+    }
+
+    if (message.type === 'GET_ATTRIBUTE_GROUPS') {
+      if (attributeGroupsCache && attributeGroupsCache.expires > Date.now()) {
+        sendResponse({ success: true, data: attributeGroupsCache.data as unknown as FamilyAttribute[] })
+        return false
+      }
+      loadCredentials()
+        .then((creds) => getAttributeGroups(creds))
+        .then((data) => {
+          attributeGroupsCache = { data, expires: Date.now() + CACHE_TTL_MS }
           sendResponse({ success: true, data: data as unknown as FamilyAttribute[] })
         })
         .catch((err) => sendResponse({ success: false, error: (err as Error).message }))

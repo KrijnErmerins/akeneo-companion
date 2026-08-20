@@ -6,9 +6,20 @@ Na deze eenmalige installatie worden toekomstige updates **automatisch door Chro
 
 ### Stap 1 — Download het `.crx` bestand
 
-Ga naar de [nieuwste release](https://github.com/KrijnErmerins/akeneo-companion/releases/latest) en download `akeneo-companion.crx`.
+Ga naar de [nieuwste release](https://git.krijn.dev/krijn/akeneo-companion/releases/latest) en download `akeneo-companion.crx`.
 
-> **Let op:** Download altijd via de [GitHub Releases-pagina](https://github.com/KrijnErmerins/akeneo-companion/releases). Het zip-bestand in de root van de repository is **niet** bedoeld voor installatie en bevat geen gebundelde extensie.
+> **Let op:** Download altijd via de [Forgejo Releases-pagina](https://git.krijn.dev/krijn/akeneo-companion/releases). Het zip-bestand in de root van de repository is **niet** bedoeld voor installatie en bevat geen gebundelde extensie.
+
+### Al geïnstalleerd via de oude GitHub-link?
+
+Chrome checkt updates via de link die in je **huidig geïnstalleerde** versie staat, dus als je nog de oude GitHub-build hebt, schakelt hij niet automatisch over. Eenmalig handmatig:
+
+1. Download het nieuwste `.crx` bestand via de [Forgejo Releases-pagina](https://git.krijn.dev/krijn/akeneo-companion/releases/latest)
+2. Ga naar `chrome://extensions`
+3. Zet **Ontwikkelaarsmodus** aan (rechtsboven) — zonder dit weigert Chrome het bestand met `CRX_REQUIRED_PROOF_MISSING`
+4. Sleep het `.crx` bestand naar het tabblad — Chrome herkent hetzelfde extensie-ID en vervangt de installatie, je instellingen blijven behouden
+
+Vanaf dat moment werkt auto-update weer gewoon, via Forgejo.
 
 ### Stap 2 — Installeer de extensie
 
