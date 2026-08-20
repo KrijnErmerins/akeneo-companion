@@ -44,7 +44,7 @@ jobs:
           VITE_AKENEO_PASSWORD: ${{ secrets.VITE_AKENEO_PASSWORD }}
 
       - name: Install zip
-        run: command -v zip &>/dev/null || (sudo apt-get update && sudo apt-get install -y zip)
+        run: command -v zip &>/dev/null || (apt-get update && apt-get install -y zip)
 
       - name: Zip extension
         run: cd dist && zip -r ../akeneo-companion.zip . && cd ..
@@ -55,10 +55,10 @@ jobs:
             echo "Chrome already installed: $(google-chrome --version 2>/dev/null || google-chrome-stable --version)"
           else
             wget -q -O /tmp/google-chrome-signing.pub https://dl.google.com/linux/linux_signing_key.pub
-            sudo gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
-            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-            sudo apt-get update
-            sudo apt-get install -y google-chrome-stable
+            gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
+            apt-get update
+            apt-get install -y google-chrome-stable
           fi
 
       - name: Write PEM key
@@ -82,6 +82,14 @@ jobs:
             </app>
           </gupdate>
           EOF
+
+      - name: Commit update.xml to main
+        run: |
+          git add update.xml
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update.xml for ${GITHUB_REF_NAME}"
+            git push origin HEAD:main
+          fi
 
       - uses: https://code.forgejo.org/actions/forgejo-release@v2
         with:

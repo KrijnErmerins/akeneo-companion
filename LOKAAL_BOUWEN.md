@@ -20,7 +20,7 @@ node --version
 ## 1. Repository ophalen
 
 ```bash
-git clone https://github.com/KrijnErmerins/akeneo-companion.git
+git clone https://git.krijn.dev/krijn/akeneo-companion.git
 cd akeneo-companion
 ```
 

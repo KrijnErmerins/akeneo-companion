@@ -228,10 +228,10 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
   )
 }
 
-const PIMPORT_DOWNLOAD_URL = 'https://github.com/KrijnErmerins/akeneo-companion/releases/latest/download/akeneo-companion.zip'
+const PIMPORT_DOWNLOAD_URL = 'https://git.krijn.dev/krijn/akeneo-companion/releases/latest'
 
 const UPDATE_STEPS = [
-  'Klik op "Download" hieronder om de ZIP te downloaden.',
+  'Klik op "Download" hieronder en download de ZIP van de release-pagina.',
   'Pak het ZIP-bestand uit naar een vaste map (bijv. C:\\Extensions\\akeneo-companion).',
   'Ga naar chrome://extensions in een nieuw tabblad.',
   'Klik op het ververs-icoon (↺) bij Akeneo Companion — klaar!',

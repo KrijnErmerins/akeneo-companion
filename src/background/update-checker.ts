@@ -1,4 +1,4 @@
-const GITHUB_REPO = 'KrijnErmerins/akeneo-companion'
+const FORGEJO_REPO = 'krijn/akeneo-companion'
 const CHECK_INTERVAL_MS = 60 * 60 * 1000 // 1 hour
 
 interface UpdateState {
@@ -35,8 +35,8 @@ export async function checkForUpdate(): Promise<void> {
 
   try {
     const res = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-      { headers: { Accept: 'application/vnd.github+json' } },
+      `https://git.krijn.dev/api/v1/repos/${FORGEJO_REPO}/releases/latest`,
+      { headers: { Accept: 'application/json' } },
     )
     if (!res.ok) return
 
