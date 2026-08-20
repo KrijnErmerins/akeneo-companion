@@ -228,6 +228,23 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
   )
 }
 
+function GroupHeader({ label }: { label: string }) {
+  return (
+    <div style={{
+      fontSize: 11,
+      fontWeight: 700,
+      fontFamily: FONT_HEADING,
+      color: PRIMARY,
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+      padding: '10px 0 4px',
+      borderBottom: `1px solid ${HAIRLINE}`,
+    }}>
+      {label}
+    </div>
+  )
+}
+
 const PIMPORT_DOWNLOAD_URL = 'https://git.krijn.dev/krijn/akeneo-companion/releases/latest'
 
 const UPDATE_STEPS = [
@@ -347,7 +364,8 @@ export default function App() {
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
   const [akeneoBaseUrl, setAkeneoBaseUrl] = useState<string>(import.meta.env.VITE_AKENEO_BASE_URL as string ?? '')
   const [optionLabels, setOptionLabels] = useState<Record<string, Map<string, Record<string, string>>>>({})
-  const [attributeTypes, setAttributeTypes] = useState<Map<string, string>>(new Map())
+  const [attributeTypes, setAttributeTypes] = useState<Map<string, { type: string; group: string }>>(new Map())
+  const [attributeGroups, setAttributeGroups] = useState<Map<string, { labels: Record<string, string>; sortOrder: number }>>(new Map())
   const [filterQuery, setFilterQuery] = useState<string>('')
   const [akeneoHover, setAkeneoHover] = useState(false)
   const [clearHover, setClearHover] = useState(false)
@@ -389,15 +407,26 @@ export default function App() {
   }, [product?.family])
 
   useEffect(() => {
+    chrome.runtime.sendMessage(
+      { type: 'GET_ATTRIBUTE_GROUPS' },
+      (res: FamilyAttributesResponse) => {
+        if (res.success && res.data) {
+          setAttributeGroups(res.data as unknown as Map<string, { labels: Record<string, string>; sortOrder: number }>)
+        }
+      },
+    )
+  }, [])
+
+  useEffect(() => {
     if (!product?.family) return
     const SELECT_TYPES = new Set(['pim_catalog_simpleselect', 'pim_catalog_multiselect'])
     chrome.runtime.sendMessage(
       { type: 'GET_ATTRIBUTE_TYPES', familyCode: product.family },
       (res: FamilyAttributesResponse) => {
         if (!res.success || !res.data) return
-        const typeMap = res.data as unknown as Map<string, string>
+        const typeMap = res.data as unknown as Map<string, { type: string; group: string }>
         setAttributeTypes(typeMap)
-        const selectAttrs = Object.keys(product.values).filter((code) => SELECT_TYPES.has(typeMap.get(code) ?? ''))
+        const selectAttrs = Object.keys(product.values).filter((code) => SELECT_TYPES.has(typeMap.get(code)?.type ?? ''))
         if (selectAttrs.length === 0) return
         Promise.all(
           selectAttrs.map(
@@ -516,7 +545,7 @@ export default function App() {
     ? Math.round(reqFilled / reqTotal * 100)
     : null
 
-  const mediaAttrs = familyAttrs?.filter((a) => MEDIA_TYPES.has(attributeTypes.get(a.code) ?? '')) ?? []
+  const mediaAttrs = familyAttrs?.filter((a) => MEDIA_TYPES.has(attributeTypes.get(a.code)?.type ?? '')) ?? []
   const mediaTotal = familyAttrs ? mediaAttrs.length : null
   const mediaFilled = familyAttrs && product
     ? mediaAttrs.filter((a) => {
@@ -532,15 +561,35 @@ export default function App() {
     ? allEntries.filter(([attr]) => prettifyAttr(attr).toLowerCase().includes(filterQuery.toLowerCase()))
     : allEntries
 
-  const sortedEntries = familyAttrs
-    ? [...filteredEntries].sort(([a], [b]) => {
-        const aReq = requiredSet.has(a)
-        const bReq = requiredSet.has(b)
-        if (aReq && !bReq) return -1
-        if (!aReq && bReq) return 1
-        return 0
-      })
-    : filteredEntries
+  const sortByRequired = (entries: [string, AttributeValue[]][]) =>
+    [...entries].sort(([a], [b]) => {
+      const aReq = requiredSet.has(a)
+      const bReq = requiredSet.has(b)
+      if (aReq && !bReq) return -1
+      if (!aReq && bReq) return 1
+      return 0
+    })
+
+  const sortedEntries = familyAttrs ? sortByRequired(filteredEntries) : filteredEntries
+
+  const hasGroupData = attributeTypes.size > 0
+
+  const groupedSections = hasGroupData
+    ? Array.from(
+        filteredEntries.reduce((acc, entry) => {
+          const groupCode = attributeTypes.get(entry[0])?.group ?? ''
+          if (!acc.has(groupCode)) acc.set(groupCode, [])
+          acc.get(groupCode)!.push(entry)
+          return acc
+        }, new Map<string, [string, AttributeValue[]][]>()),
+      )
+        .map(([code, entries]) => {
+          const info = attributeGroups.get(code)
+          const label = (code && info?.labels[locale]) || Object.values(info?.labels ?? {})[0] || code || 'Overig'
+          return { code, label, sortOrder: info?.sortOrder ?? Number.MAX_SAFE_INTEGER, entries: sortByRequired(entries) }
+        })
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label))
+    : []
 
   const diffFields = product && pdpData ? diffPdpWithAkeneo(pdpData, product, locale) : null
 
@@ -802,10 +851,20 @@ export default function App() {
             {/* Table */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
               <div>
-                {sortedEntries.map(([attr, vals]) => {
-                  const value = resolveValue(vals, locale, optionLabels[attr])
-                  return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
-                })}
+                {hasGroupData
+                  ? groupedSections.map((section) => (
+                      <div key={section.code || 'other'}>
+                        <GroupHeader label={section.label} />
+                        {section.entries.map(([attr, vals]) => {
+                          const value = resolveValue(vals, locale, optionLabels[attr])
+                          return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
+                        })}
+                      </div>
+                    ))
+                  : sortedEntries.map(([attr, vals]) => {
+                      const value = resolveValue(vals, locale, optionLabels[attr])
+                      return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />
+                    })}
               </div>
               {filteredEntries.length === 0 && (
                 <p style={{ fontSize: 13, color: MUTED, padding: '20px 0', fontFamily: FONT_BODY }}>

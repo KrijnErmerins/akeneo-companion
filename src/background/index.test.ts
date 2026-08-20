@@ -7,6 +7,7 @@ vi.mock('./akeneo', () => ({
   getFamilyAttributes: vi.fn(),
   getAttributeTypes: vi.fn(),
   getAttributeOptions: vi.fn(),
+  getAttributeGroups: vi.fn(),
 }))
 
 vi.mock('./credentials', () => ({
@@ -49,6 +50,7 @@ beforeEach(() => {
   vi.mocked(akeneo.getFamilyAttributes).mockResolvedValue([])
   vi.mocked(akeneo.getAttributeTypes).mockResolvedValue(new Map())
   vi.mocked(akeneo.getAttributeOptions).mockResolvedValue(new Map())
+  vi.mocked(akeneo.getAttributeGroups).mockResolvedValue(new Map())
   vi.mocked(chrome.storage.local.get).mockImplementation((_k, cb) => {
     ;(cb as (r: Record<string, unknown>) => void)({})
     return Promise.resolve()
@@ -188,7 +190,7 @@ describe('GET_ATTRIBUTE_TYPES', () => {
   })
 
   it('returns true and responds with attribute types', async () => {
-    vi.mocked(akeneo.getAttributeTypes).mockResolvedValue(new Map([['name', 'pim_catalog_text']]))
+    vi.mocked(akeneo.getAttributeTypes).mockResolvedValue(new Map([['name', { type: 'pim_catalog_text', group: 'general' }]]))
 
     const { returnValue, response } = invoke({ type: 'GET_ATTRIBUTE_TYPES', familyCode: 'AT-FAM' })
     expect(returnValue).toBe(true)
@@ -233,6 +235,28 @@ describe('GET_ATTRIBUTE_OPTIONS', () => {
     listener({ type: 'GET_ATTRIBUTE_OPTIONS', attributeCode: 'CACHE-ATTR' }, {} as chrome.runtime.MessageSender, respond2)
 
     expect(akeneo.getAttributeOptions).not.toHaveBeenCalled()
+    expect(respond2).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
+  })
+})
+
+describe('GET_ATTRIBUTE_GROUPS', () => {
+  it('returns true and responds with attribute groups', async () => {
+    vi.mocked(akeneo.getAttributeGroups).mockResolvedValue(new Map([['general', { labels: { nl_NL: 'Algemeen' }, sortOrder: 0 }]]))
+
+    const { returnValue, response } = invoke({ type: 'GET_ATTRIBUTE_GROUPS' })
+    expect(returnValue).toBe(true)
+    expect((await response as { success: boolean }).success).toBe(true)
+  })
+
+  it('returns cached result on second call without re-fetching', async () => {
+    const { response: p1 } = invoke({ type: 'GET_ATTRIBUTE_GROUPS' })
+    await p1
+    vi.mocked(akeneo.getAttributeGroups).mockClear()
+
+    const respond2 = vi.fn()
+    listener({ type: 'GET_ATTRIBUTE_GROUPS' }, {} as chrome.runtime.MessageSender, respond2)
+
+    expect(akeneo.getAttributeGroups).not.toHaveBeenCalled()
     expect(respond2).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
   })
 })

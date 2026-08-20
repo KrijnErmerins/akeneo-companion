@@ -34,7 +34,7 @@ export interface FamilyAttribute {
 }
 
 export interface ExtensionMessage {
-  type: 'GET_PRODUCT' | 'SKU_DETECTED' | 'GET_FAMILY_ATTRIBUTES' | 'GET_ATTRIBUTE_TYPES' | 'GET_ATTRIBUTE_OPTIONS' | 'GET_PDP_DATA'
+  type: 'GET_PRODUCT' | 'SKU_DETECTED' | 'GET_FAMILY_ATTRIBUTES' | 'GET_ATTRIBUTE_TYPES' | 'GET_ATTRIBUTE_OPTIONS' | 'GET_ATTRIBUTE_GROUPS' | 'GET_PDP_DATA'
   sku?: string
   locale?: string
   familyCode?: string

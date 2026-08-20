@@ -106,14 +106,27 @@ async function fetchAllPages<T>(
 export async function getAttributeTypes(
   familyCode: string,
   credentials: AkeneoCredentials,
-): Promise<Map<string, string>> {
-  const items = await fetchAllPages<{ code: string; type: string }>(
+): Promise<Map<string, { type: string; group: string }>> {
+  const items = await fetchAllPages<{ code: string; type: string; group: string }>(
     credentials.baseUrl,
     `/api/rest/v1/attributes?families[]=${encodeURIComponent(familyCode)}&limit=100`,
     credentials,
   )
-  const map = new Map<string, string>()
-  for (const item of items) map.set(item.code, item.type)
+  const map = new Map<string, { type: string; group: string }>()
+  for (const item of items) map.set(item.code, { type: item.type, group: item.group })
+  return map
+}
+
+export async function getAttributeGroups(
+  credentials: AkeneoCredentials,
+): Promise<Map<string, { labels: Record<string, string>; sortOrder: number }>> {
+  const items = await fetchAllPages<{ code: string; sort_order: number; labels: Record<string, string> }>(
+    credentials.baseUrl,
+    `/api/rest/v1/attribute-groups?limit=100`,
+    credentials,
+  )
+  const map = new Map<string, { labels: Record<string, string>; sortOrder: number }>()
+  for (const item of items) map.set(item.code, { labels: item.labels ?? {}, sortOrder: item.sort_order })
   return map
 }
 
