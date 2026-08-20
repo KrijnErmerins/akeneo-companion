@@ -17,7 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
       - run: npm ci
 
@@ -45,30 +44,26 @@ jobs:
           VITE_AKENEO_PASSWORD: ${{ secrets.VITE_AKENEO_PASSWORD }}
 
       - name: Install zip
-        run: command -v zip &>/dev/null || (sudo apt-get update && sudo apt-get install -y zip)
+        run: |
+          echo "BEGIN install zip, current path: $(command -v zip || echo none)"
+          sudo apt-get update
+          sudo apt-get install -y zip
+          echo "END install zip, now at: $(command -v zip)"
 
       - name: Zip extension
         run: cd dist && zip -r ../akeneo-companion.zip . && cd ..
 
-      - name: Cache Google Chrome
-        id: cache-chrome
-        uses: actions/cache@v4
-        with:
-          path: /opt/google/chrome
-          key: google-chrome-stable-${{ runner.os }}
-
-      - name: Restore Chrome symlink from cache
-        if: steps.cache-chrome.outputs.cache-hit == 'true'
-        run: sudo ln -sf /opt/google/chrome/google-chrome /usr/bin/google-chrome-stable
-
       - name: Install Google Chrome
-        if: steps.cache-chrome.outputs.cache-hit != 'true'
         run: |
-          wget -q -O /tmp/google-chrome-signing.pub https://dl.google.com/linux/linux_signing_key.pub
-          sudo gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          if command -v google-chrome-stable &>/dev/null || command -v google-chrome &>/dev/null; then
+            echo "Chrome already installed: $(google-chrome --version 2>/dev/null || google-chrome-stable --version)"
+          else
+            wget -q -O /tmp/google-chrome-signing.pub https://dl.google.com/linux/linux_signing_key.pub
+            sudo gpg --batch --no-tty --dearmor -o /usr/share/keyrings/google-chrome.gpg /tmp/google-chrome-signing.pub
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+            sudo apt-get update
+            sudo apt-get install -y google-chrome-stable
+          fi
 
       - name: Write PEM key
         run: echo "${{ secrets.CRX_KEY_PEM }}" > key.pem
