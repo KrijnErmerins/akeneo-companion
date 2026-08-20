@@ -191,7 +191,7 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
         alignItems: 'center',
         color: MUTED,
         fontSize: 10,
-        fontWeight: 500,
+        fontWeight: 700,
         fontFamily: FONT_MONO,
         letterSpacing: '0.07em',
         textTransform: 'uppercase',
@@ -213,7 +213,7 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
       <div style={{
         fontSize: 14,
         fontFamily: FONT_BODY,
-        fontWeight: missing ? 400 : 500,
+        fontWeight: 400,
         color: missing ? (required ? DANGER_TEXT : MUTED) : INK,
         wordBreak: 'break-word',
         lineHeight: 1.5,
@@ -228,19 +228,36 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
   )
 }
 
-function GroupHeader({ label }: { label: string }) {
+function GroupHeader({ label, count, first }: { label: string; count: number; first: boolean }) {
   return (
     <div style={{
-      fontSize: 11,
-      fontWeight: 700,
-      fontFamily: FONT_HEADING,
-      color: PRIMARY,
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
-      padding: '10px 0 4px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      margin: first ? '0 -16px 4px' : '16px -16px 4px',
+      padding: '7px 16px',
+      background: BODY_BG,
+      borderTop: `1px solid ${HAIRLINE}`,
       borderBottom: `1px solid ${HAIRLINE}`,
     }}>
-      {label}
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        fontFamily: FONT_HEADING,
+        color: INK,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+      }}>
+        {label}
+      </span>
+      <span style={{
+        fontSize: 10,
+        fontWeight: 500,
+        fontFamily: FONT_MONO,
+        color: MUTED,
+      }}>
+        {count}
+      </span>
     </div>
   )
 }
@@ -411,7 +428,7 @@ export default function App() {
       { type: 'GET_ATTRIBUTE_GROUPS' },
       (res: FamilyAttributesResponse) => {
         if (res.success && res.data) {
-          setAttributeGroups(res.data as unknown as Map<string, { labels: Record<string, string>; sortOrder: number }>)
+          setAttributeGroups(new Map(res.data as unknown as [string, { labels: Record<string, string>; sortOrder: number }][]))
         }
       },
     )
@@ -424,7 +441,7 @@ export default function App() {
       { type: 'GET_ATTRIBUTE_TYPES', familyCode: product.family },
       (res: FamilyAttributesResponse) => {
         if (!res.success || !res.data) return
-        const typeMap = res.data as unknown as Map<string, { type: string; group: string }>
+        const typeMap = new Map(res.data as unknown as [string, { type: string; group: string }][])
         setAttributeTypes(typeMap)
         const selectAttrs = Object.keys(product.values).filter((code) => SELECT_TYPES.has(typeMap.get(code)?.type ?? ''))
         if (selectAttrs.length === 0) return
@@ -436,7 +453,7 @@ export default function App() {
                   { type: 'GET_ATTRIBUTE_OPTIONS', attributeCode: code },
                   (optRes: FamilyAttributesResponse) => {
                     if (optRes.success && optRes.data) {
-                      resolve([code, optRes.data as unknown as Map<string, Record<string, string>>])
+                      resolve([code, new Map(optRes.data as unknown as [string, Record<string, string>][])])
                     } else {
                       resolve([code, new Map()])
                     }
@@ -531,7 +548,11 @@ export default function App() {
     })
   }, [])
 
-  const allEntries = product ? Object.entries(product.values) : []
+  const allEntries: [string, AttributeValue[]][] = product
+    ? (familyAttrs
+        ? familyAttrs.map((a) => [a.code, product.values[a.code] ?? []] as [string, AttributeValue[]])
+        : Object.entries(product.values))
+    : []
   const requiredSet = new Set(familyAttrs?.filter((a) => a.required).map((a) => a.code) ?? [])
 
   const reqTotal = familyAttrs ? familyAttrs.filter((a) => a.required).length : null
@@ -869,9 +890,9 @@ export default function App() {
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px' }}>
               <div>
                 {hasGroupData
-                  ? groupedSections.map((section) => (
+                  ? groupedSections.map((section, i) => (
                       <div key={section.code || 'other'}>
-                        <GroupHeader label={section.label} />
+                        <GroupHeader label={section.label} count={section.entries.length} first={i === 0} />
                         {section.entries.map(([attr, vals]) => {
                           const value = resolveValue(vals, locale, optionLabels[attr])
                           return <Row key={attr} attr={attr} value={value} required={requiredSet.has(attr)} />

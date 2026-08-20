@@ -58,7 +58,7 @@ export async function lookupProduct(
     return {
       type: 'product-model',
       identifier: model.code,
-      family: model.family_variant ?? null,
+      family: model.family ?? null,
       values: model.values ?? {},
     }
   }
@@ -107,12 +107,23 @@ export async function getAttributeTypes(
   familyCode: string,
   credentials: AkeneoCredentials,
 ): Promise<Map<string, { type: string; group: string }>> {
-  const items = await fetchAllPages<{ code: string; type: string; group: string }>(
+  const familyRes = await apiFetch(
     credentials.baseUrl,
-    `/api/rest/v1/attributes?families[]=${encodeURIComponent(familyCode)}&limit=100`,
+    `/api/rest/v1/families/${encodeURIComponent(familyCode)}`,
     credentials,
   )
+  if (!familyRes.ok) throw new Error(`Family fetch failed: ${familyRes.status}`)
+  const familyData = await familyRes.json() as { attributes?: string[] }
+  const codes = familyData.attributes ?? []
   const map = new Map<string, { type: string; group: string }>()
+  if (codes.length === 0) return map
+
+  const search = JSON.stringify({ code: [{ operator: 'IN', value: codes }] })
+  const items = await fetchAllPages<{ code: string; type: string; group: string }>(
+    credentials.baseUrl,
+    `/api/rest/v1/attributes?search=${encodeURIComponent(search)}&limit=100`,
+    credentials,
+  )
   for (const item of items) map.set(item.code, { type: item.type, group: item.group })
   return map
 }

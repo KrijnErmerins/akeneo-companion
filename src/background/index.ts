@@ -102,16 +102,18 @@ chrome.runtime.onMessage.addListener(
       }
       const cached = attributeTypeCache.get(message.familyCode)
       if (cached && cached.expires > Date.now()) {
-        sendResponse({ success: true, data: cached.data as unknown as FamilyAttribute[] })
+        sendResponse({ success: true, data: Array.from(cached.data) as unknown as FamilyAttribute[] })
         return false
       }
       loadCredentials()
         .then((creds) => getAttributeTypes(message.familyCode!, creds))
         .then((data) => {
           attributeTypeCache.set(message.familyCode!, { data, expires: Date.now() + CACHE_TTL_MS })
-          sendResponse({ success: true, data: data as unknown as FamilyAttribute[] })
+          sendResponse({ success: true, data: Array.from(data) as unknown as FamilyAttribute[] })
         })
-        .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
+        .catch((err) => {
+          sendResponse({ success: false, error: (err as Error).message })
+        })
       return true
     }
 
@@ -122,14 +124,14 @@ chrome.runtime.onMessage.addListener(
       }
       const cached = attributeOptionsCache.get(message.attributeCode)
       if (cached && cached.expires > Date.now()) {
-        sendResponse({ success: true, data: cached.data as unknown as FamilyAttribute[] })
+        sendResponse({ success: true, data: Array.from(cached.data) as unknown as FamilyAttribute[] })
         return false
       }
       loadCredentials()
         .then((creds) => getAttributeOptions(message.attributeCode!, creds))
         .then((data) => {
           attributeOptionsCache.set(message.attributeCode!, { data, expires: Date.now() + CACHE_TTL_MS })
-          sendResponse({ success: true, data: data as unknown as FamilyAttribute[] })
+          sendResponse({ success: true, data: Array.from(data) as unknown as FamilyAttribute[] })
         })
         .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
       return true
@@ -137,14 +139,14 @@ chrome.runtime.onMessage.addListener(
 
     if (message.type === 'GET_ATTRIBUTE_GROUPS') {
       if (attributeGroupsCache && attributeGroupsCache.expires > Date.now()) {
-        sendResponse({ success: true, data: attributeGroupsCache.data as unknown as FamilyAttribute[] })
+        sendResponse({ success: true, data: Array.from(attributeGroupsCache.data) as unknown as FamilyAttribute[] })
         return false
       }
       loadCredentials()
         .then((creds) => getAttributeGroups(creds))
         .then((data) => {
           attributeGroupsCache = { data, expires: Date.now() + CACHE_TTL_MS }
-          sendResponse({ success: true, data: data as unknown as FamilyAttribute[] })
+          sendResponse({ success: true, data: Array.from(data) as unknown as FamilyAttribute[] })
         })
         .catch((err) => sendResponse({ success: false, error: (err as Error).message }))
       return true

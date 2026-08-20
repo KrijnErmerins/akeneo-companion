@@ -88,7 +88,7 @@ describe('lookupProduct — product-model fallback', () => {
   it('tries product-model endpoint when product returns 404', async () => {
     vi.stubGlobal('fetch', makeFetch([
       { ok: false, status: 404, body: {} },
-      { ok: true, status: 200, body: { code: 'MODEL-42', family_variant: 'clothing_color_size', values: {} } },
+      { ok: true, status: 200, body: { code: 'MODEL-42', family: 'clothing', family_variant: 'clothing_color_size', values: {} } },
     ]))
 
     const result = await lookupProduct('MODEL-42', CREDS)
@@ -96,7 +96,7 @@ describe('lookupProduct — product-model fallback', () => {
     expect(result).toEqual({
       type: 'product-model',
       identifier: 'MODEL-42',
-      family: 'clothing_color_size',
+      family: 'clothing',
       values: {},
     })
     expect(fetch).toHaveBeenCalledTimes(2)
@@ -105,7 +105,7 @@ describe('lookupProduct — product-model fallback', () => {
   it('second call targets the product-models endpoint', async () => {
     vi.stubGlobal('fetch', makeFetch([
       { ok: false, status: 404, body: {} },
-      { ok: true, status: 200, body: { code: 'M', family_variant: null, values: {} } },
+      { ok: true, status: 200, body: { code: 'M', family: null, values: {} } },
     ]))
 
     await lookupProduct('M', CREDS)
