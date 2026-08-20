@@ -89,7 +89,7 @@ export function OptionsApp() {
       <div style={{
         background: CANVAS,
         borderRadius: 12,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         overflow: 'hidden',
       }}>
         {/* Card header */}
@@ -137,7 +137,7 @@ export function OptionsApp() {
                   width: '100%',
                   padding: '7px 12px',
                   border: `1px solid ${HAIRLINE}`,
-                  borderRadius: 8,
+                  borderRadius: 12,
                   fontSize: 14,
                   fontFamily: FONT_BODY,
                   color: INK,
@@ -165,7 +165,7 @@ export function OptionsApp() {
               style={{
                 padding: '7px 14px',
                 background: PRIMARY,
-                color: '#000000',
+                color: CANVAS,
                 border: 'none',
                 borderRadius: 8,
                 cursor: 'pointer',

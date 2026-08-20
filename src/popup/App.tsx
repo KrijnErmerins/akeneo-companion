@@ -6,9 +6,9 @@ import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP, FILL_LOCALES } from '../types/a
 import { diffPdpWithAkeneo } from '../content/pdp-diff'
 import {
   PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
-  CANVAS, BODY_BG, INK, MUTED, HAIRLINE,
+  CANVAS, BODY_BG, INK, MUTED, HAIRLINE, BORDER_STRONG,
   DANGER, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
-  SUCCESS, SUCCESS_TEXT, FONT_HEADING, FONT_BODY,
+  SUCCESS, SUCCESS_TEXT, FONT_HEADING, FONT_BODY, FONT_MONO,
 } from '../tokens'
 
 const MEDIA_TYPES = new Set(['pim_catalog_image', 'pim_catalog_asset_collection'])
@@ -78,7 +78,7 @@ function resolveValue(values: AttributeValue[], locale: string, optionMap?: Map<
 const WARNING      = '#F59E0B'
 const WARNING_TEXT = '#92400E'
 const WARNING_BG   = '#FFFBEB'
-const SUCCESS_BG   = '#F0FDF4'
+const SUCCESS_BG   = PRIMARY_LIGHT
 
 function CompletenessBadge({ pct, title, icon }: { pct: number; title: string; icon?: ReactNode }) {
   const bg   = pct >= 80 ? SUCCESS_BG   : pct >= 50 ? WARNING_BG  : DANGER_BG
@@ -191,8 +191,8 @@ function Row({ attr, value, required }: { attr: string; value: string; required?
         alignItems: 'center',
         color: MUTED,
         fontSize: 10,
-        fontWeight: 600,
-        fontFamily: FONT_BODY,
+        fontWeight: 500,
+        fontFamily: FONT_MONO,
         letterSpacing: '0.07em',
         textTransform: 'uppercase',
         userSelect: 'none',
@@ -596,7 +596,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 1 }}>
             <div style={{
               display: 'flex',
-              border: `1px solid ${HAIRLINE}`,
+              border: `1px solid ${BORDER_STRONG}`,
               borderRadius: 8,
               overflow: 'hidden',
               flexShrink: 0,
@@ -612,16 +612,18 @@ export default function App() {
                   <button
                     key={key}
                     title={tooltipText}
+                    aria-pressed={isActive}
                     onClick={() => setLocale(key)}
                     style={{
-                      padding: '3px 8px',
+                      padding: '5px 10px',
+                      minHeight: 24,
                       fontSize: 11,
                       fontFamily: FONT_BODY,
                       fontWeight: isActive ? 600 : 400,
                       background: isActive ? PRIMARY : BODY_BG,
                       color: isActive ? CANVAS : MUTED,
                       border: 'none',
-                      borderLeft: i > 0 ? `1px solid ${HAIRLINE}` : 'none',
+                      borderLeft: i > 0 ? `1px solid ${BORDER_STRONG}` : 'none',
                       cursor: isActive ? 'default' : 'pointer',
                       lineHeight: 1.4,
                       userSelect: 'none',
@@ -636,6 +638,7 @@ export default function App() {
             {status === 'done' && product && (
               <button
                 title="Bekijk in Akeneo"
+                aria-label="Bekijk in Akeneo"
                 onClick={() => {
                   const segment = product.type === 'product-model' ? 'product-model' : 'product'
                   const identifier = product.type === 'product-model' ? sku : (product.uuid ?? sku)
@@ -647,12 +650,14 @@ export default function App() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  width: 24,
+                  height: 24,
                   background: akeneoHover ? PRIMARY_LIGHT : 'none',
                   border: 'none',
-                  padding: 2,
+                  padding: 0,
                   cursor: 'pointer',
                   color: akeneoHover ? PRIMARY_DARK : PRIMARY,
-                  borderRadius: 4,
+                  borderRadius: 8,
                   lineHeight: 0,
                   transition: 'color 0.15s, background 0.15s',
                 }}
@@ -748,6 +753,7 @@ export default function App() {
               <div style={{ position: 'relative' }}>
                 <svg
                   width="13" height="13" viewBox="0 0 13 13" fill="none"
+                  aria-hidden="true" focusable="false"
                   style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: MUTED, pointerEvents: 'none' }}
                 >
                   <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.3"/>
@@ -755,6 +761,7 @@ export default function App() {
                 </svg>
                 <input
                   type="text"
+                  aria-label="Zoek attribuut"
                   placeholder="Zoek attribuut…"
                   value={filterQuery}
                   onChange={(e) => setFilterQuery(e.target.value)}
@@ -769,13 +776,23 @@ export default function App() {
                     fontFamily: FONT_BODY,
                     color: INK,
                     background: BODY_BG,
-                    border: `1px solid ${HAIRLINE}`,
-                    borderRadius: 8,
+                    border: `1px solid ${BORDER_STRONG}`,
+                    borderRadius: 12,
                     outline: 'none',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = PRIMARY
+                    e.target.style.boxShadow = `0 0 0 3px ${PRIMARY_MID}`
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = BORDER_STRONG
+                    e.target.style.boxShadow = 'none'
                   }}
                 />
                 {filterQuery && (
                   <button
+                    aria-label="Wis filter"
                     onClick={() => setFilterQuery('')}
                     onMouseEnter={() => setClearHover(true)}
                     onMouseLeave={() => setClearHover(false)}
