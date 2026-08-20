@@ -16,7 +16,8 @@ Chrome checkt updates via de link die in je **huidig geïnstalleerde** versie st
 
 1. Download het nieuwste `.crx` bestand via de [Forgejo Releases-pagina](https://git.krijn.dev/krijn/akeneo-companion/releases/latest)
 2. Ga naar `chrome://extensions`
-3. Sleep het `.crx` bestand naar het tabblad — Chrome herkent hetzelfde extensie-ID en vervangt de installatie, je instellingen blijven behouden
+3. Zet **Ontwikkelaarsmodus** aan (rechtsboven) — zonder dit weigert Chrome het bestand met `CRX_REQUIRED_PROOF_MISSING`
+4. Sleep het `.crx` bestand naar het tabblad — Chrome herkent hetzelfde extensie-ID en vervangt de installatie, je instellingen blijven behouden
 
 Vanaf dat moment werkt auto-update weer gewoon, via Forgejo.
 
