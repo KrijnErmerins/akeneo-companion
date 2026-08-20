@@ -6,7 +6,7 @@ import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP, FILL_LOCALES } from '../types/a
 import { diffPdpWithAkeneo } from '../content/pdp-diff'
 import {
   PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
-  CANVAS, BODY_BG, INK, MUTED, HAIRLINE, BORDER_STRONG,
+  CANVAS, BODY_BG, BONE, INK, BODY, MUTED, HAIRLINE, BORDER_STRONG,
   DANGER, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
   SUCCESS, SUCCESS_TEXT, FONT_HEADING, FONT_BODY, FONT_MONO,
 } from '../tokens'
@@ -164,16 +164,15 @@ function Chip({ children }: { children: string }) {
   return (
     <span style={{
       display: 'inline-block',
-      padding: '4px 10px',
-      background: PRIMARY_LIGHT,
-      border: `1px solid ${PRIMARY_MID}`,
-      borderRadius: 999,
+      padding: '3px 8px',
+      background: BONE,
+      border: `1px solid ${HAIRLINE}`,
+      borderRadius: 6,
       fontSize: 11,
-      fontFamily: FONT_BODY,
-      fontWeight: 600,
-      color: PRIMARY,
-      letterSpacing: '0.02em',
-      textTransform: 'uppercase',
+      fontFamily: FONT_MONO,
+      fontWeight: 500,
+      color: BODY,
+      letterSpacing: '0.01em',
       lineHeight: 1.4,
     }}>
       {children}
@@ -236,9 +235,12 @@ function GroupHeader({ label, count, first }: { label: string; count: number; fi
       justifyContent: 'space-between',
       margin: first ? '0 -16px 4px' : '16px -16px 4px',
       padding: '7px 16px',
-      background: BODY_BG,
+      background: BONE,
       borderTop: `1px solid ${HAIRLINE}`,
       borderBottom: `1px solid ${HAIRLINE}`,
+      position: 'sticky',
+      top: 0,
+      zIndex: 1,
     }}>
       <span style={{
         fontSize: 11,
@@ -288,7 +290,7 @@ function UpdateBanner({ version }: { version: string }) {
         gap: 8,
         fontSize: 12,
         fontFamily: FONT_BODY,
-        color: PRIMARY,
+        color: PRIMARY_DARK,
       }}>
         <span style={{ fontWeight: 500 }}>Update beschikbaar: v{version}</span>
         <button
@@ -301,7 +303,7 @@ function UpdateBanner({ version }: { version: string }) {
             border: 'none',
             padding: '0 4px',
             cursor: 'pointer',
-            color: expandHover ? PRIMARY_DARK : PRIMARY,
+            color: expandHover ? INK : PRIMARY_DARK,
             fontSize: 11,
             fontFamily: FONT_BODY,
             fontWeight: 500,
@@ -334,7 +336,7 @@ function UpdateBanner({ version }: { version: string }) {
           padding: '0 16px 10px',
           fontSize: 12,
           fontFamily: FONT_BODY,
-          color: PRIMARY,
+          color: PRIMARY_DARK,
         }}>
           <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
             {UPDATE_STEPS.map((step, i) => (
@@ -691,7 +693,7 @@ export default function App() {
                       fontFamily: FONT_BODY,
                       fontWeight: isActive ? 600 : 400,
                       background: isActive ? PRIMARY : BODY_BG,
-                      color: isActive ? CANVAS : MUTED,
+                      color: isActive ? BODY_BG : MUTED,
                       border: 'none',
                       borderLeft: i > 0 ? `1px solid ${BORDER_STRONG}` : 'none',
                       cursor: isActive ? 'default' : 'pointer',
@@ -727,7 +729,7 @@ export default function App() {
                   padding: 0,
                   cursor: 'pointer',
                   color: akeneoHover ? PRIMARY_DARK : PRIMARY,
-                  borderRadius: 8,
+                  borderRadius: 999,
                   lineHeight: 0,
                   transition: 'color 0.15s, background 0.15s',
                 }}
@@ -754,14 +756,14 @@ export default function App() {
             margin: 16,
             padding: '14px 16px',
             border: `1px solid ${DANGER_BORDER}`,
-            borderRadius: 12,
+            borderRadius: 8,
             background: DANGER_BG,
             fontSize: 13,
             fontFamily: FONT_BODY,
             color: DANGER_TEXT,
             lineHeight: 1.5,
           }}>
-            <span style={{ marginRight: 6, color: DANGER }}>⚠</span>{errorMsg}
+            <span style={{ marginRight: 6, color: DANGER_TEXT }}>⚠</span>{errorMsg}
           </div>
         )}
 
@@ -847,12 +849,12 @@ export default function App() {
                     color: INK,
                     background: BODY_BG,
                     border: `1px solid ${BORDER_STRONG}`,
-                    borderRadius: 12,
+                    borderRadius: 8,
                     outline: 'none',
                     transition: 'border-color 0.15s, box-shadow 0.15s',
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = PRIMARY
+                    e.target.style.borderColor = PRIMARY_DARK
                     e.target.style.boxShadow = `0 0 0 3px ${PRIMARY_MID}`
                   }}
                   onBlur={(e) => {

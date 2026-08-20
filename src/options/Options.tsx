@@ -4,8 +4,8 @@ import { StrictMode } from 'react'
 import type { AkeneoCredentials } from '../types/akeneo'
 import { credentials as buildTimeCredentials } from '../background/credentials'
 import {
-  PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT,
-  CANVAS, BODY_BG, INK, BODY, MUTED, HAIRLINE, BORDER_STRONG,
+  PRIMARY_DARK, PRIMARY_LIGHT,
+  BODY_BG, BONE, INK, BODY, MUTED, HAIRLINE, BORDER_STRONG,
   SUCCESS, SUCCESS_TEXT, DANGER_BG, DANGER_TEXT, DANGER_BORDER,
   FONT_HEADING, FONT_BODY,
 } from '../tokens'
@@ -87,9 +87,9 @@ export function OptionsApp() {
     }}>
       {/* Card */}
       <div style={{
-        background: CANVAS,
-        borderRadius: 12,
-        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        background: BODY_BG,
+        borderRadius: 8,
+        border: `1px solid ${HAIRLINE}`,
         overflow: 'hidden',
       }}>
         {/* Card header */}
@@ -137,18 +137,18 @@ export function OptionsApp() {
                   width: '100%',
                   padding: '7px 12px',
                   border: `1px solid ${HAIRLINE}`,
-                  borderRadius: 12,
+                  borderRadius: 8,
                   fontSize: 14,
                   fontFamily: FONT_BODY,
                   color: INK,
-                  background: CANVAS,
+                  background: BONE,
                   outline: 'none',
                   boxSizing: 'border-box',
                   lineHeight: 1.5,
                   transition: 'border-color 150ms, box-shadow 150ms',
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = PRIMARY
+                  e.target.style.borderColor = PRIMARY_DARK
                   e.target.style.boxShadow = `0 0 0 3px ${PRIMARY_LIGHT}`
                 }}
                 onBlur={(e) => {
@@ -164,10 +164,10 @@ export function OptionsApp() {
               onClick={save}
               style={{
                 padding: '7px 14px',
-                background: PRIMARY,
-                color: CANVAS,
+                background: PRIMARY_DARK,
+                color: BODY_BG,
                 border: 'none',
-                borderRadius: 8,
+                borderRadius: 12,
                 cursor: 'pointer',
                 fontSize: 14,
                 fontWeight: 500,
@@ -175,8 +175,8 @@ export function OptionsApp() {
                 lineHeight: 1.4,
                 transition: 'background 150ms',
               }}
-              onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.background = PRIMARY_DARK }}
-              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = saved ? PRIMARY : PRIMARY }}
+              onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.background = INK }}
+              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = saved ? PRIMARY_DARK : PRIMARY_DARK }}
             >
               {saved ? 'Opgeslagen!' : 'Opslaan'}
             </button>
@@ -185,10 +185,10 @@ export function OptionsApp() {
               disabled={testStatus === 'testing'}
               style={{
                 padding: '7px 14px',
-                background: CANVAS,
+                background: BONE,
                 color: BODY,
                 border: `1px solid ${BORDER_STRONG}`,
-                borderRadius: 8,
+                borderRadius: 12,
                 cursor: testStatus === 'testing' ? 'wait' : 'pointer',
                 fontSize: 14,
                 fontWeight: 500,
@@ -205,7 +205,7 @@ export function OptionsApp() {
               }}
               onMouseLeave={(e) => {
                 const btn = e.target as HTMLButtonElement
-                btn.style.background = CANVAS
+                btn.style.background = BONE
                 btn.style.borderColor = BORDER_STRONG
               }}
             >
@@ -232,7 +232,7 @@ export function OptionsApp() {
               padding: '12px 14px',
               background: DANGER_BG,
               border: `1px solid ${DANGER_BORDER}`,
-              borderRadius: 12,
+              borderRadius: 8,
               fontSize: 13,
               fontFamily: FONT_BODY,
               color: DANGER_TEXT,
