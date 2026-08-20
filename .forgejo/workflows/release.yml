@@ -46,14 +46,14 @@ jobs:
           VITE_AKENEO_PASSWORD: ${{ secrets.VITE_AKENEO_PASSWORD }}
 
       - name: Install zip
-        run: command -v zip &>/dev/null || (apt-get update && apt-get install -y zip)
+        run: command -v zip >/dev/null 2>&1 || (apt-get update && apt-get install -y zip)
 
       - name: Zip extension
         run: cd dist && zip -r ../akeneo-companion.zip . && cd ..
 
       - name: Install Google Chrome
         run: |
-          if command -v google-chrome-stable &>/dev/null || command -v google-chrome &>/dev/null; then
+          if command -v google-chrome-stable >/dev/null 2>&1 || command -v google-chrome >/dev/null 2>&1; then
             echo "Chrome already installed: $(google-chrome --version 2>/dev/null || google-chrome-stable --version)"
           else
             wget -q -O /tmp/google-chrome-signing.pub https://dl.google.com/linux/linux_signing_key.pub
