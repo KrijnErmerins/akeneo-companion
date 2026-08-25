@@ -84,6 +84,8 @@ export const DOMAIN_LOCALE_MAP: Record<string, string> = {
 export const HOSTNAME_LOCALE_MAP: Record<string, string> = {
   'de.ledchampion.magento2.led.p.maxserv.io': 'de_DE',
   'de.ledchampion.magento2.led.a.maxserv.dev': 'de_DE',
+  'nl.smarthomekoning.magento2.led.p.maxserv.io': 'nl_NL',
+  'de.smarthomekoning.magento2.led.p.maxserv.io': 'de_DE',
 }
 
 // Derived from DOMAIN_LOCALE_MAP — single source of truth for fill-rate locale list
