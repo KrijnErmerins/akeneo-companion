@@ -1,4 +1,4 @@
-import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP } from '../types/akeneo'
+import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP, WILDCARD_STAGING_DOMAIN } from '../types/akeneo'
 
 export function extractSku(doc: Document = document): string | null {
   // 1. JSON-LD structured data
@@ -53,6 +53,10 @@ export function extractSku(doc: Document = document): string | null {
 
 export function getLocale(hostname: string): string {
   if (HOSTNAME_LOCALE_MAP[hostname]) return HOSTNAME_LOCALE_MAP[hostname]
+  if (hostname.endsWith(`.${WILDCARD_STAGING_DOMAIN}`)) {
+    const prefix = hostname.split('.')[0]
+    if (DOMAIN_LOCALE_MAP[prefix]) return DOMAIN_LOCALE_MAP[prefix]
+  }
   const tld = hostname.split('.').pop() ?? 'nl'
   return DOMAIN_LOCALE_MAP[tld] ?? 'nl_NL'
 }

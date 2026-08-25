@@ -82,11 +82,13 @@ export const DOMAIN_LOCALE_MAP: Record<string, string> = {
 
 // Full-hostname overrides (staging/test domains that don't have a meaningful TLD)
 export const HOSTNAME_LOCALE_MAP: Record<string, string> = {
-  'de.ledchampion.magento2.led.p.maxserv.io': 'de_DE',
   'de.ledchampion.magento2.led.a.maxserv.dev': 'de_DE',
-  'nl.smarthomekoning.magento2.led.p.maxserv.io': 'nl_NL',
-  'de.smarthomekoning.magento2.led.p.maxserv.io': 'de_DE',
 }
+
+// Wildcard staging platform domain — locale is derived from the subdomain prefix
+// (e.g. nl.smarthomekoning.magento2.led.p.maxserv.io -> nl_NL) instead of whitelisting
+// every shop's full hostname. See getLocale() in src/content/sku-logic.ts.
+export const WILDCARD_STAGING_DOMAIN = 'magento2.led.p.maxserv.io'
 
 // Derived from DOMAIN_LOCALE_MAP — single source of truth for fill-rate locale list
 export const FILL_LOCALES: { key: string; label: string }[] = Object.entries(DOMAIN_LOCALE_MAP).map(

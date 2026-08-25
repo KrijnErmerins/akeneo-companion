@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import DOMPurify from 'dompurify'
 import type { ExtensionResponse, AttributeValue, DiffField, DiffFieldKey, FamilyAttribute, FamilyAttributesResponse, PdpScrapedData, ProductLookupResult } from '../types/akeneo'
-import { DOMAIN_LOCALE_MAP, HOSTNAME_LOCALE_MAP, FILL_LOCALES } from '../types/akeneo'
+import { FILL_LOCALES } from '../types/akeneo'
 import { diffPdpWithAkeneo } from '../content/pdp-diff'
+import { getLocale } from '../content/sku-logic'
 import {
   PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, PRIMARY_MID,
   CANVAS, BODY_BG, BONE, INK, BODY, MUTED, HAIRLINE, BORDER_STRONG,
@@ -476,8 +477,7 @@ export default function App() {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
       const url = tab?.url ?? ''
       const hostname = new URL(url).hostname
-      const tld = hostname.split('.').pop() ?? 'nl'
-      const detectedLocale = HOSTNAME_LOCALE_MAP[hostname] ?? DOMAIN_LOCALE_MAP[tld] ?? 'nl_NL'
+      const detectedLocale = getLocale(hostname)
       setLocale(detectedLocale)
 
       const tabId = tab!.id!

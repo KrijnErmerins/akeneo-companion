@@ -111,7 +111,26 @@ describe('getLocale — TLD mapping', () => {
 })
 
 describe('getLocale — full-hostname override', () => {
-  it('maps staging DE domain → de_DE', () => {
+  it('maps staging .maxserv.dev domain → de_DE', () => {
+    expect(getLocale('de.ledchampion.magento2.led.a.maxserv.dev')).toBe('de_DE')
+  })
+})
+
+describe('getLocale — wildcard staging domain (prefix-based)', () => {
+  it('maps nl. prefix on *.magento2.led.p.maxserv.io → nl_NL', () => {
+    expect(getLocale('nl.smarthomekoning.magento2.led.p.maxserv.io')).toBe('nl_NL')
+  })
+
+  it('maps de. prefix on *.magento2.led.p.maxserv.io → de_DE', () => {
+    expect(getLocale('de.smarthomekoning.magento2.led.p.maxserv.io')).toBe('de_DE')
+  })
+
+  it('works for any shop subdomain on the wildcard platform', () => {
+    expect(getLocale('nl.newshop.magento2.led.p.maxserv.io')).toBe('nl_NL')
     expect(getLocale('de.ledchampion.magento2.led.p.maxserv.io')).toBe('de_DE')
+  })
+
+  it('falls back to nl_NL for an unrecognized prefix on the wildcard domain', () => {
+    expect(getLocale('fr.someshop.magento2.led.p.maxserv.io')).toBe('nl_NL')
   })
 })
