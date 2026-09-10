@@ -94,3 +94,23 @@ This project uses **direct push to `main`** — no feature branches, no PRs, no 
 - **Test suite** — vitest (`npm test`); covers `akeneo.test.ts`, `auth.test.ts`, `sku-logic.test.ts`, `App.test.tsx` (~512 lines). Run tests before committing logic changes.
 - The popup is fixed at 340×200px (set in `manifest.config.ts` via `default_popup`).
 - All UI strings are in Dutch.
+
+## Agent skills
+
+### Workflow
+
+Idea → `/grill-with-docs` → `/to-spec` → `/to-tickets` → `/implement` per ticket. Full flow, branches and repo rules: see `docs/agents/workflow.md`.
+
+This overrides the global planning instruction: in this repo, `/to-spec` + `/to-tickets` replace `/writing-plans`, and `/implement` replaces `/executing-plans`.
+
+### Issue tracker
+
+Local markdown under `.scratch/<feature>/` (spec + one file per ticket). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) on each ticket's `Status:` line. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the root (created lazily), alongside the existing `decisions/log.md`. See `docs/agents/domain.md`.
