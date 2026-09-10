@@ -84,7 +84,7 @@ Transform tasks into verifiable goals before starting. For multi-step tasks, sta
 
 This project uses **direct push to `main`** — no feature branches, no PRs, no `develop` branch.
 
-- Commit directly on `main` and push with `git push origin main`.
+- Commit directly on `main` and push with `git push forgejo main`. Always push to the `forgejo` remote (git.krijn.dev), never to `origin` (GitHub).
 - Always include `Co-Authored-By: Paperclip <noreply@paperclip.ing>` at the end of each commit message.
 - This overrides the general CTO git-workflow instructions (feature branches + PRs) which apply to pimport, not this repo.
 
